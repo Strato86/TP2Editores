@@ -1,12 +1,24 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2017
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Editores TP2", "Editores TP2.csproj", "{2CD37538-A09E-CAB3-4F4A-C92D8AFE0D37}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Editores TP2.Editor", "Editores TP2.Editor.csproj", "{27C6A110-4410-EF18-F025-64ACBD03EF18}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2CD37538-A09E-CAB3-4F4A-C92D8AFE0D37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CD37538-A09E-CAB3-4F4A-C92D8AFE0D37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CD37538-A09E-CAB3-4F4A-C92D8AFE0D37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CD37538-A09E-CAB3-4F4A-C92D8AFE0D37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27C6A110-4410-EF18-F025-64ACBD03EF18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27C6A110-4410-EF18-F025-64ACBD03EF18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27C6A110-4410-EF18-F025-64ACBD03EF18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27C6A110-4410-EF18-F025-64ACBD03EF18}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
