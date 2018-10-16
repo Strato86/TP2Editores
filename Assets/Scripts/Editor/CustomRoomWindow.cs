@@ -7,8 +7,8 @@ using Object = UnityEngine.Object;
 
 public class CustomRoomWindow : EditorWindow {
 
-    List<ModuleNode> modules;
-
+    List<ModuleNode> floorModules;
+    List<ModuleNode> obstacleModules;
     Rect roomGraph;
     float toolBarWidth = 250;
     float bottomBarheight = 10;
@@ -33,8 +33,8 @@ public class CustomRoomWindow : EditorWindow {
     Color editorColor = new Color(194f/255f, 194f/255f, 194f/255f, 1);
 
     int amount;
-    List<GridNode> gNodes;
-    GridNode[,] graphNodes;
+    List<GridNode> floorNodes;
+    List<GridNode> obstacleNodes;
     Vector2Int moduleSize;
     Vector2Int boardSize;
 
@@ -45,12 +45,15 @@ public class CustomRoomWindow : EditorWindow {
     string groupName = "";
 
     string prefabRoute = "LevelCreator";
-    string prefabFolder = "Prefabs Painter";
+    string floorFolder = "Floor prefabs";
+    string obstaclesFolder = "Obstacle prefabs";
 
     public static void OpenWindow(int amount, Vector2Int moduleSize, Vector2Int boardSize)
     {
         var w = (CustomRoomWindow)GetWindow(typeof(CustomRoomWindow));
-        w.modules = new List<ModuleNode>();
+        w.floorModules = new List<ModuleNode>();
+        w.obstacleModules = new List<ModuleNode>();
+
         w.graphPan = new Vector2(w.toolBarWidth, w.smallBorder);
         w.roomGraph = new Rect(w.toolBarWidth, w.smallBorder, 1000000, 1000000);
 
@@ -58,23 +61,27 @@ public class CustomRoomWindow : EditorWindow {
         {
             boardSize = new Vector2Int(80, 50);
         }
-        w.graphNodes = new GridNode[boardSize.x,boardSize.y];
         w.moduleSize = moduleSize;
         w.boardSize = boardSize;
         w.pickedGridNode = new GridNode(0, 0, 0, 0, Color.clear,-1,0,0);
 
-        w.gNodes = new List<GridNode>();
+        w.floorNodes = new List<GridNode>();
+        w.obstacleNodes = new List<GridNode>();
 
         if (!AssetDatabase.IsValidFolder("Assets/LevelDesign"))
         {
             AssetDatabase.CreateFolder("Assets", "LevelDesign");
         }
-        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.prefabFolder))
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.floorFolder))
         {
-            AssetDatabase.CreateFolder("Assets/LevelDesign", w.prefabFolder);
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.floorFolder);
+        }
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.obstaclesFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.obstaclesFolder);
         }
         string[] folders = new string[1];
-        folders[0] = "Assets/LevelDesign/" + w.prefabFolder;
+        folders[0] = "Assets/LevelDesign/" + w.floorFolder;
         var paths = AssetDatabase.FindAssets("t: Object", folders);
         
         for (int i = 0; i < paths.Length; i++)
@@ -83,7 +90,19 @@ public class CustomRoomWindow : EditorWindow {
 
             var pf = new ModuleNode();
             pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
-            w.modules.Add(pf);
+            w.floorModules.Add(pf);
+        }
+
+        folders[0] = "Assets/LevelDesign/" + w.obstaclesFolder;
+        paths = AssetDatabase.FindAssets("t: Object", folders);
+        
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+            w.obstacleModules.Add(pf);
         }
 
     }
@@ -103,13 +122,38 @@ public class CustomRoomWindow : EditorWindow {
 
         BeginWindows();
         //Board Nodes
-        foreach(var g in gNodes)
+        
+        foreach(var fN in floorNodes)
         {
-            g.rect.width = gridSeparation;
-            g.rect.height = gridSeparation;
-            g.rect.x = g.gridX * gridSeparation;
-            g.rect.y = g.gridY * gridSeparation; 
-            EditorGUI.DrawRect(g.rect, g.color);
+            fN.rect.width = gridSeparation;
+            fN.rect.height = gridSeparation;
+            fN.rect.x = fN.gridX * gridSeparation;
+            fN.rect.y = fN.gridY * gridSeparation; 
+            fN.color = floorModules[fN.id].color;
+            if(layer != Layers.Floor)
+            {
+                fN.color = new Color(fN.color.r,fN.color.g,fN.color.b,0.5f);
+            }else
+            {
+                fN.color = new Color(fN.color.r,fN.color.g,fN.color.b,1f);
+            }
+            EditorGUI.DrawRect(fN.rect, fN.color);
+        }
+        if(layer != Layers.Floor)
+        {
+            foreach(var oN in obstacleNodes)
+            {
+                oN.rect.width = gridSeparation;
+                oN.rect.height = gridSeparation;
+                oN.rect.x = oN.gridX * gridSeparation;
+                oN.rect.y = oN.gridY * gridSeparation; 
+                oN.color = obstacleModules[oN.id].color;
+                EditorGUI.DrawRect(oN.rect, oN.color);
+                //Center color to diferenciate from floor
+                var c = oN.color/2;
+                var r = new Rect(oN.rect.x + gridSeparation/3, oN.rect.y + gridSeparation/3,gridSeparation/3,gridSeparation/3);
+                EditorGUI.DrawRect(r,c);
+            }   
         }
         //Horizontal Lines
         for (int i = 0; i * gridSeparation + graphPan.y <= position.height - bottomBarheight && i <= boardSize.y; i++)
@@ -149,14 +193,14 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUILayout.LabelField("Group Name");
         groupName = EditorGUILayout.TextField(groupName);
         moduleSize = EditorGUILayout.Vector2IntField("Module Dimensions", moduleSize);
-        EditorGUILayout.LabelField("Prefab Amount: " + modules.Count);
+        //EditorGUILayout.LabelField("Prefab Amount: " + floorModules.Count);
 
-        var add = GUILayout.Button("Add Prefab");
+        /*var add = GUILayout.Button("Add Prefab");
         if (add)
         {
             var pf = new ModuleNode();
-            modules.Add(pf);
-        }
+            floorModules.Add(pf);
+        }*/
         EditorGUILayout.LabelField("Selected Tool", EditorStyles.boldLabel);
         if(pickedGridNode.id < 0)
         {
@@ -180,24 +224,49 @@ public class CustomRoomWindow : EditorWindow {
 
         scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250));
         //Prefabs
-        for (int i = 0; i < modules.Count; i++)
+        switch(layer)
         {
-            DrawLine(Color.gray);
-            modules[i].id = i;
-            EditorGUILayout.LabelField("id: " + (modules[i].id).ToString());
-            modules[i].color = EditorGUILayout.ColorField("Color", modules[i].color);
-            modules[i].color = new Color(modules[i].color.r, modules[i].color.g, modules[i].color.b, 1);
-            modules[i].prefab = (GameObject)EditorGUILayout.ObjectField(modules[i].prefab, typeof(GameObject), true);
-            if (modules[i].prefab)
-            {
-                var p = GUILayout.Button("Pick");
-                if (p)
+            case Layers.Floor:
+                for (int i = 0; i < floorModules.Count; i++)
                 {
-                    pickedGridNode.SetColorAndID(modules[i].color, modules[i].id);
+                DrawLine(Color.gray);
+                floorModules[i].id = i;
+                EditorGUILayout.LabelField("id: " + (floorModules[i].id).ToString());
+                floorModules[i].color = EditorGUILayout.ColorField("Color", floorModules[i].color);
+                floorModules[i].color = new Color(floorModules[i].color.r, floorModules[i].color.g, floorModules[i].color.b, 1);
+                floorModules[i].prefab = (GameObject)EditorGUILayout.ObjectField(floorModules[i].prefab, typeof(GameObject), true);
+                if (floorModules[i].prefab)
+                {
+                    var p = GUILayout.Button("Pick");
+                    if (p)
+                    {
+                        pickedGridNode.SetColorAndID(floorModules[i].color, floorModules[i].id);
+                    }
                 }
-            }
 
+                }
+                break;
+            case Layers.Obstacles:
+                for(int i = 0; i< obstacleModules.Count; i++)
+                {
+                    DrawLine(Color.gray);
+                    obstacleModules[i].id = i;
+                    EditorGUILayout.LabelField("id: " + (obstacleModules[i].id).ToString());
+                    obstacleModules[i].color = EditorGUILayout.ColorField("Color", obstacleModules[i].color);
+                    obstacleModules[i].color = new Color(obstacleModules[i].color.r, obstacleModules[i].color.g, obstacleModules[i].color.b, 1);
+                    obstacleModules[i].prefab = (GameObject)EditorGUILayout.ObjectField(obstacleModules[i].prefab, typeof(GameObject), true);
+                    if (obstacleModules[i].prefab)
+                    {
+                        var p = GUILayout.Button("Pick");
+                        if (p)
+                        {
+                            pickedGridNode.SetColorAndID(obstacleModules[i].color, obstacleModules[i].id);
+                        }
+                    }
+                }
+                break;
         }
+        
         EditorGUILayout.EndScrollView();
        
         EditorGUILayout.EndVertical();
@@ -213,7 +282,8 @@ public class CustomRoomWindow : EditorWindow {
 
         if (GUILayout.Button("Reset"))
         {
-            gNodes = new List<GridNode>();
+            floorNodes = new List<GridNode>();
+            obstacleNodes = new List<GridNode>();
         }
         
         if (GUILayout.Button("Erase"))
@@ -230,7 +300,6 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUILayout.BeginHorizontal();
         EditorGUILayout.EndHorizontal();
         */
-        Debug.Log(gNodes.Count);
     }
 
     private void CheckMouseInput(Event current)
@@ -255,7 +324,7 @@ public class CustomRoomWindow : EditorWindow {
             Repaint();
         }
 
-        if(current.button == 0 && (current.type == EventType.MouseDown))
+        if(current.button == 0 && (current.type == EventType.MouseDown || current.type == EventType.MouseDrag))
         {
             _singleTap = false;
             DrawPrefabNode(current);
@@ -273,32 +342,65 @@ public class CustomRoomWindow : EditorWindow {
         
         var id = pickedGridNode.id;
         bool isOcupied = false;
-        foreach(var g in gNodes)
+        switch(layer)
         {
-            if(!isOcupied)
-                isOcupied = (g.gridX == x && g.gridY == y);
-        }
-        Debug.Log("id: " + id + "isOcupied: " + isOcupied);
-        if(id < 0 && isOcupied)
-        {
-            for(var i = gNodes.Count-1; i >= 0;i--)
-            {
-                if(gNodes[i].gridX == x && gNodes[i].gridY == y)
+            case Layers.Floor:
+                foreach(var g in floorNodes)
                 {
-                    gNodes.RemoveAt(i);
-                    Repaint();
+                    if(!isOcupied)
+                        isOcupied = (g.gridX == x && g.gridY == y);
                 }
-            }
+                if(id < 0 && isOcupied)
+                {
+                    for(var i = floorNodes.Count-1; i >= 0;i--)
+                    {
+                        if(floorNodes[i].gridX == x && floorNodes[i].gridY == y)
+                        {
+                            floorNodes.RemoveAt(i);
+                            Repaint();
+                        }
+                    }
+                }
+                else if(id >= 0)
+                {
+                    if(x < boardSize.x && y < boardSize.y && !isOcupied)
+                    {
+                        var g = new GridNode(x *gridSeparation,y*gridSeparation,gridSeparation,gridSeparation,pickedGridNode.color, pickedGridNode.id,x,y);
+                        floorNodes.Add(g);
+                        Repaint();
+                    }
+                }
+                break;
+
+            case Layers.Obstacles:
+                foreach(var g in obstacleNodes)
+                {
+                    if(!isOcupied)
+                        isOcupied = (g.gridX == x && g.gridY == y);
+                }
+                if(id < 0 && isOcupied)
+                {
+                    for(var i = obstacleNodes.Count-1; i >= 0;i--)
+                    {
+                        if(obstacleNodes[i].gridX == x && obstacleNodes[i].gridY == y)
+                        {
+                            floorNodes.RemoveAt(i);
+                            Repaint();
+                        }
+                    }
+                }
+                else if(id >= 0)
+                {
+                    if(x < boardSize.x && y < boardSize.y && !isOcupied)
+                    {
+                        var g = new GridNode(x *gridSeparation,y*gridSeparation,gridSeparation,gridSeparation,pickedGridNode.color, pickedGridNode.id,x,y);
+                        obstacleNodes.Add(g);
+                        Repaint();
+                    }
+                }
+                break;
         }
-        else if(id >= 0)
-        {
-            if(x < boardSize.x && y < boardSize.y && !isOcupied)
-            {
-                var g = new GridNode(x *gridSeparation,y*gridSeparation,gridSeparation,gridSeparation,pickedGridNode.color, pickedGridNode.id,x,y);
-                gNodes.Add(g);
-                Repaint();
-            }
-        }
+        
 
         
     }
@@ -307,15 +409,26 @@ public class CustomRoomWindow : EditorWindow {
     {
         var goParent = new GameObject(groupName);
 
-        foreach(var g in gNodes)
+        foreach(var fN in floorNodes)
         {
-            var pos = new Vector3(g.gridX * moduleSize.x, 0f, g.gridY * moduleSize.y);
-            var pf = PrefabUtility.InstantiatePrefab(modules[g.id].prefab);
+            var pos = new Vector3(-fN.gridX * moduleSize.x, 0f, fN.gridY * moduleSize.y);
+            var pf = PrefabUtility.InstantiatePrefab(floorModules[fN.id].prefab);
             var go = ((GameObject)pf);
             go.transform.position = pos;
             go.transform.rotation = Quaternion.identity;
             go.transform.SetParent(goParent.transform);
         }
+
+        foreach(var oN in obstacleNodes)
+        {
+            var pos = new Vector3(-oN.gridX * moduleSize.x, 0f, oN.gridY * moduleSize.y);
+            var pf = PrefabUtility.InstantiatePrefab(obstacleModules[oN.id].prefab);
+            var go = ((GameObject)pf);
+            go.transform.position = pos;
+            go.transform.rotation = Quaternion.identity;
+            go.transform.SetParent(goParent.transform);
+        }
+
     }
 
     private void DrawLine(Color col, bool bold = false, bool vertical = false)
