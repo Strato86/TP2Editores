@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EventManager : MonoBehaviour {
+public class EventManager  {
     public delegate void eventFunction(params object[] parameterContainer);
     private Dictionary<string , List<eventFunction>> dic= new Dictionary<string, List<eventFunction>>();
     public static EventManager instance=null;
