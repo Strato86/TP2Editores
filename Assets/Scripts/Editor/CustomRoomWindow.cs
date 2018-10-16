@@ -11,7 +11,7 @@ public class CustomRoomWindow : EditorWindow {
 
     Rect roomGraph;
     float toolBarWidth = 250;
-    float bottomBarheight = 50;
+    float bottomBarheight = 10;
 
     Vector2 scrollView;
 
@@ -33,11 +33,14 @@ public class CustomRoomWindow : EditorWindow {
     Color editorColor = new Color(194f/255f, 194f/255f, 194f/255f, 1);
 
     int amount;
+    List<GridNode> gNodes;
     GridNode[,] graphNodes;
     Vector2Int moduleSize;
     Vector2Int boardSize;
 
     GridNode pickedGridNode;
+
+    Layers layer;
 
     string groupName = "";
 
@@ -58,16 +61,9 @@ public class CustomRoomWindow : EditorWindow {
         w.graphNodes = new GridNode[boardSize.x,boardSize.y];
         w.moduleSize = moduleSize;
         w.boardSize = boardSize;
-        w.pickedGridNode = new GridNode(0, 0, 0, 0, Color.clear,-1);
+        w.pickedGridNode = new GridNode(0, 0, 0, 0, Color.clear,-1,0,0);
 
-        for (int i = 0; i < boardSize.y; i++)
-        {
-            for (int j = 0; j < boardSize.x; j++)
-            {
-                w.graphNodes[j, i] = new GridNode(i * w.gridSeparation, j * w.gridSeparation, w.gridSeparation, w.gridSeparation, Color.clear, -1);
-                EditorGUI.DrawRect(w.graphNodes[j, i].rect, w.graphNodes[j, i].color);
-            }
-        }
+        w.gNodes = new List<GridNode>();
 
         if (!AssetDatabase.IsValidFolder("Assets/LevelDesign"))
         {
@@ -107,23 +103,19 @@ public class CustomRoomWindow : EditorWindow {
 
         BeginWindows();
         //Board Nodes
-        for (int i = 0; i < boardSize.y; i++)
+        foreach(var g in gNodes)
         {
-            for (int j = 0; j < boardSize.x; j++)
-            {
-                graphNodes[j, i].rect = new Rect(i * gridSeparation, j * gridSeparation, gridSeparation, gridSeparation);
-                var c = graphNodes[j, i].id < 0 ? graphNodes[j, i].color : modules[graphNodes[j, i].id].color;
-                
-                EditorGUI.DrawRect(graphNodes[j, i].rect, c);
-
-            }
+            g.rect.width = gridSeparation;
+            g.rect.height = gridSeparation;
+            g.rect.x = g.gridX * gridSeparation;
+            g.rect.y = g.gridY * gridSeparation; 
+            EditorGUI.DrawRect(g.rect, g.color);
         }
         //Horizontal Lines
         for (int i = 0; i * gridSeparation + graphPan.y <= position.height - bottomBarheight && i <= boardSize.y; i++)
         {
             var b = i % gridBold == 0 ? 2 : 1;
-            //var width = boardSize.x * gridSeparation < position.width - toolBarWidth - smallBorder ? boardSize.x * gridSeparation + 2 + graphPan.x : position.width - smallBorder;
-           var width = boardSize.x * gridSeparation + 2 + graphPan.x - toolBarWidth;
+            var width = boardSize.x * gridSeparation + 2 + graphPan.x - toolBarWidth;
             EditorGUI.DrawRect(new Rect(-graphPan.x + toolBarWidth, i * gridSeparation, width, b), gridColor);
         }
 
@@ -210,29 +202,20 @@ public class CustomRoomWindow : EditorWindow {
        
         EditorGUILayout.EndVertical();
 
-        EditorGUILayout.LabelField("Zoom: ", GUILayout.Width(50));
+        EditorGUILayout.LabelField("Zoom: ", GUILayout.Width(40));
         var zoomIn = GUILayout.Button("+", GUILayout.Width(20));
         var zoomOut = GUILayout.Button("-", GUILayout.Width(20));
 
+        EditorGUILayout.LabelField("Layer: ", GUILayout.Width(40));
+        layer = (Layers)EditorGUILayout.EnumPopup(layer,GUILayout.Width(100));
         if (zoomIn) gridSeparation++;
         if (zoomOut) gridSeparation = gridSeparation <= 10 ? 10 : gridSeparation - 1;
 
-        EditorGUILayout.EndHorizontal();
-        EditorGUILayout.EndVertical();
-        EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("Reset"))
         {
-            for (int i = 0; i < boardSize.y; i++)
-            {
-                for (int j = 0; j < boardSize.x; j++)
-                {
-                    graphNodes[i, j] = new GridNode(i * gridSeparation, j * gridSeparation, gridSeparation,gridSeparation, Color.clear, -1);
-                    EditorGUI.DrawRect(graphNodes[i, j].rect, graphNodes[i, j].color);
-                }
-            }
+            gNodes = new List<GridNode>();
         }
         
-        //GUILayout.Button("Paint");
         if (GUILayout.Button("Erase"))
         {
             pickedGridNode.SetColorAndID(Color.clear, -1);
@@ -242,6 +225,12 @@ public class CustomRoomWindow : EditorWindow {
             CreateRoom(groupName);
         }
         EditorGUILayout.EndHorizontal();
+        EditorGUILayout.EndVertical();
+        /*
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.EndHorizontal();
+        */
+        Debug.Log(gNodes.Count);
     }
 
     private void CheckMouseInput(Event current)
@@ -266,7 +255,7 @@ public class CustomRoomWindow : EditorWindow {
             Repaint();
         }
 
-        if(current.button == 0 && (current.type == EventType.MouseDrag || current.type == EventType.MouseDown))
+        if(current.button == 0 && (current.type == EventType.MouseDown))
         {
             _singleTap = false;
             DrawPrefabNode(current);
@@ -281,31 +270,51 @@ public class CustomRoomWindow : EditorWindow {
     {
         var x = (int)((current.mousePosition.x - graphPan.x) / gridSeparation);
         var y = (int)((current.mousePosition.y - graphPan.y) / gridSeparation);
-        if(x < boardSize.x && y < boardSize.y)
+        
+        var id = pickedGridNode.id;
+        bool isOcupied = false;
+        foreach(var g in gNodes)
         {
-            graphNodes[x, y].SetColorAndID(pickedGridNode.color, pickedGridNode.id);
-            Repaint();
+            if(!isOcupied)
+                isOcupied = (g.gridX == x && g.gridY == y);
         }
+        Debug.Log("id: " + id + "isOcupied: " + isOcupied);
+        if(id < 0 && isOcupied)
+        {
+            for(var i = gNodes.Count-1; i >= 0;i--)
+            {
+                if(gNodes[i].gridX == x && gNodes[i].gridY == y)
+                {
+                    gNodes.RemoveAt(i);
+                    Repaint();
+                }
+            }
+        }
+        else if(id >= 0)
+        {
+            if(x < boardSize.x && y < boardSize.y && !isOcupied)
+            {
+                var g = new GridNode(x *gridSeparation,y*gridSeparation,gridSeparation,gridSeparation,pickedGridNode.color, pickedGridNode.id,x,y);
+                gNodes.Add(g);
+                Repaint();
+            }
+        }
+
+        
     }
 
     private void CreateRoom(string groupName)
     {
         var goParent = new GameObject(groupName);
-        for (int i = 0; i < boardSize.x; i++)
+
+        foreach(var g in gNodes)
         {
-            for (int j = 0; j < boardSize.y; j++)
-            {
-                var id = graphNodes[i, j].id;
-                if (id != -1)
-                {
-                    var pos = new Vector3(i * moduleSize.x, 0f, j * moduleSize.y);
-                    var pf = PrefabUtility.InstantiatePrefab(modules[id].prefab);
-                    var go = ((GameObject)pf);
-                    go.transform.position = pos;
-                    go.transform.rotation = Quaternion.identity;
-                    go.transform.SetParent(goParent.transform);
-                }
-            }
+            var pos = new Vector3(g.gridX * moduleSize.x, 0f, g.gridY * moduleSize.y);
+            var pf = PrefabUtility.InstantiatePrefab(modules[g.id].prefab);
+            var go = ((GameObject)pf);
+            go.transform.position = pos;
+            go.transform.rotation = Quaternion.identity;
+            go.transform.SetParent(goParent.transform);
         }
     }
 
@@ -314,5 +323,13 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUILayout.Space();
         EditorGUI.DrawRect(GUILayoutUtility.GetRect(100, 2), col);
         EditorGUILayout.Space();
+    }
+
+    public enum Layers
+    {
+        Floor,
+        Obstacles,
+        Enemies,
+        EventTriggers
     }
 }
