@@ -28,9 +28,14 @@ public class CustomRoomWindow : EditorWindow {
     int smallBorder = 25;
     float gridSeparation = 20;
     int gridBold = 5;
+
+    int rulerBorder = 20;
     Color gridColor = new Color(0.2f, 0.2f, 0.2f, 1);
 
     Color editorColor = new Color(194f/255f, 194f/255f, 194f/255f, 1);
+
+    Color rulerColor = new Color(0.4f,0.4f,0.4f,1);
+    Color rulerGUIColor = new Color(0.8f,0.8f,0.8f,0.8f);
 
     int amount;
     List<GridNode> floorNodes;
@@ -54,8 +59,8 @@ public class CustomRoomWindow : EditorWindow {
         w.floorModules = new List<ModuleNode>();
         w.obstacleModules = new List<ModuleNode>();
 
-        w.graphPan = new Vector2(w.toolBarWidth, w.smallBorder);
-        w.roomGraph = new Rect(w.toolBarWidth, w.smallBorder, 1000000, 1000000);
+        w.graphPan = new Vector2(w.toolBarWidth + w.rulerBorder, w.smallBorder + w.rulerBorder);
+        w.roomGraph = new Rect(w.toolBarWidth + w.rulerBorder, w.smallBorder + w.rulerBorder, 1000000, 1000000);
 
         if(boardSize == Vector2Int.zero)
         {
@@ -111,11 +116,11 @@ public class CustomRoomWindow : EditorWindow {
     {
         
         CheckMouseInput(Event.current);
-        EditorGUILayout.BeginVertical(GUILayout.Height(position.height - bottomBarheight + 20));
+        
 
         roomGraph.x = graphPan.x;
         roomGraph.y = graphPan.y;
-        EditorGUI.DrawRect(new Rect(toolBarWidth, smallBorder, position.width - toolBarWidth - smallBorder, position.height - bottomBarheight), Color.gray);
+        EditorGUI.DrawRect(new Rect(toolBarWidth + rulerBorder, smallBorder + rulerBorder, position.width - toolBarWidth - smallBorder, position.height - bottomBarheight), Color.gray);
         
 
         GUI.BeginGroup(roomGraph);
@@ -155,26 +160,15 @@ public class CustomRoomWindow : EditorWindow {
                 EditorGUI.DrawRect(r,c);
             }   
         }
-        //Horizontal Lines
-        for (int i = 0; i * gridSeparation + graphPan.y <= position.height - bottomBarheight && i <= boardSize.y; i++)
-        {
-            var b = i % gridBold == 0 ? 2 : 1;
-            var width = boardSize.x * gridSeparation + 2 + graphPan.x - toolBarWidth;
-            EditorGUI.DrawRect(new Rect(-graphPan.x + toolBarWidth, i * gridSeparation, width, b), gridColor);
-        }
 
-        //Vertical Lines
-        for (int i = 0; i*gridSeparation + graphPan.x <= position.width  - smallBorder && i <= boardSize.x; i++)
-        {
-            var b = i % 5 == 0 ? 2 : 1;
-            var height = boardSize.y * gridSeparation + graphPan.y < position.height - bottomBarheight ? boardSize.y * gridSeparation + graphPan.y - smallBorder + 2 : position.height - bottomBarheight;
-            EditorGUI.DrawRect(new Rect(i * gridSeparation, - graphPan.y + smallBorder, b, height), gridColor);
-        }
+        DrawGrid();
 
-        
         EndWindows();
 
         GUI.EndGroup();
+
+        DrawRulers();
+
 
         //Editor Borders
         EditorGUI.DrawRect(new Rect(0, 0, toolBarWidth, position.height), editorColor);
@@ -182,8 +176,8 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUI.DrawRect(new Rect(0, 0, position.width, smallBorder), editorColor);
         EditorGUI.DrawRect(new Rect(position.width - smallBorder, 0, smallBorder, position.height), editorColor);
 
-
         //Editor buttons
+        EditorGUILayout.BeginVertical(GUILayout.Height(position.height - bottomBarheight + 20));
         EditorGUILayout.BeginHorizontal(GUILayout.Height( position.height - bottomBarheight));
         EditorGUILayout.BeginVertical(GUILayout.Width(200));
 
@@ -296,10 +290,6 @@ public class CustomRoomWindow : EditorWindow {
         }
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.EndVertical();
-        /*
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.EndHorizontal();
-        */
     }
 
     private void CheckMouseInput(Event current)
@@ -319,8 +309,8 @@ public class CustomRoomWindow : EditorWindow {
 
         if (_panningScreen)
         {
-            graphPan.x = _prevPan.x + current.mousePosition.x - _originalMousePosition.x;
-            graphPan.y = _prevPan.y + current.mousePosition.y - _originalMousePosition.y;
+            graphPan.x = Mathf.Min(toolBarWidth + rulerBorder,_prevPan.x + current.mousePosition.x - _originalMousePosition.x);
+            graphPan.y = Mathf.Min(smallBorder + rulerBorder,_prevPan.y + current.mousePosition.y - _originalMousePosition.y);
             Repaint();
         }
 
@@ -403,6 +393,41 @@ public class CustomRoomWindow : EditorWindow {
         
 
         
+    }
+
+    void DrawGrid()
+    {
+        //Horizontal Lines
+        for (int i = 0; i * gridSeparation + graphPan.y <= position.height - bottomBarheight; i++)
+        {
+            var b = i % gridBold == 0 ? 2 : 1;
+            var width = roomGraph.width;
+            EditorGUI.DrawRect(new Rect(0, i * gridSeparation, width, b), gridColor);
+        }
+
+        //Vertical Lines
+        for (int i = 0; i*gridSeparation + graphPan.x <= position.width  - smallBorder; i++)
+        {
+            var b = i % 5 == 0 ? 2 : 1;
+            var height = roomGraph.height;
+            EditorGUI.DrawRect(new Rect(i * gridSeparation, 0, b, height), gridColor);
+        }
+    }
+
+    void DrawRulers()
+    {
+        //Vertical Ruler
+        EditorGUI.DrawRect(new Rect(toolBarWidth,smallBorder,rulerBorder, position.height - smallBorder), rulerColor);
+        EditorGUI.DrawRect(new Rect(toolBarWidth + rulerBorder - 2 ,smallBorder, 2 , position.height - smallBorder), rulerGUIColor);
+
+        //Horizontal Ruler
+        EditorGUI.DrawRect(new Rect(toolBarWidth,smallBorder,position.width - toolBarWidth, rulerBorder), rulerColor);
+        EditorGUI.DrawRect(new Rect(toolBarWidth,smallBorder + rulerBorder - 2 ,position.width - toolBarWidth, 2), rulerGUIColor);
+
+        //Corner Square
+        EditorGUI.DrawRect(new Rect(toolBarWidth, smallBorder, rulerBorder,rulerBorder), rulerColor);
+        EditorGUI.DrawRect(new Rect(toolBarWidth + rulerBorder - 2, smallBorder, 2,rulerBorder), rulerGUIColor);
+        EditorGUI.DrawRect(new Rect(toolBarWidth , smallBorder + rulerBorder - 2,rulerBorder, 2), rulerGUIColor);
     }
 
     private void CreateRoom(string groupName)
