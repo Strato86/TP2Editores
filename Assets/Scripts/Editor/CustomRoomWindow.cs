@@ -204,7 +204,29 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUILayout.LabelField("Selected Tool", EditorStyles.boldLabel);
         if(pickedGridNode.id < 0)
         {
+
+
             GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(32)), (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
+            //    Handles.DrawSolidDisc(new Vector3(rect.center.x, rect.center.y) + Vector3.back * 20, Vector3.forward + new Vector3(100, 100) / 50, 20);
+            //Handles.DrawLine(rect.center, rect.center + offset);
+
+            //  var points = new Vector3[] { rect.min + offset, rect.max + offset, rect.min + new Vector2(rect.xMin, rect.yMax) + offset, new Vector2(rect.xMax, rect.yMin) + offset };
+            var point = new Vector2(0, 120);
+            var isPressed = false;
+            
+            isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position+point, Quaternion.identity, 32f, 32f, Handles.CubeHandleCap);
+            if (isPressed) {
+
+                Debug.Log("presionó el botón ");
+                   pickedGridNode.SetColorAndID(Color.clear, -1);
+            }
+            /*   for (var i = 0; i < points.Length; i++)
+               {
+                   //Handles.ConeHandleCap(i, points[i] + Vector3.back * 20f, Quaternion.identity, 20f, EventType.Repaint);
+                   isPressed = Handles.Button(points[i] + Vector3.back * 30f, Quaternion.identity, 50f, 45f, Handles.CubeHandleCap);
+                   if (isPressed)
+                       Debug.Log("presionó el botón " + i);
+               }*/
         }
         else
         {
@@ -286,10 +308,10 @@ public class CustomRoomWindow : EditorWindow {
             obstacleNodes = new List<GridNode>();
         }
         
-        if (GUILayout.Button("Erase"))
+  /*      if (GUILayout.Button("Erase"))
         {
             pickedGridNode.SetColorAndID(Color.clear, -1);
-        }
+        }*/
         if (GUILayout.Button("Create"))
         {
             CreateRoom(groupName);
