@@ -26,7 +26,7 @@ public class CustomRoomWindow : EditorWindow {
     GameObject go;
 
     int smallBorder = 25;
-    float gridSeparation = 20;
+    int gridSeparation = 20;
     int gridBold = 5;
 
     int rulerBorder = 20;
@@ -38,14 +38,28 @@ public class CustomRoomWindow : EditorWindow {
     Color rulerGUIColor = new Color(0.8f,0.8f,0.8f,0.8f);
 
     int amount;
+
+    //Paint Tool Variables
     List<GridNode> floorNodes;
+    GridNode pickedGridNode;
     List<GridNode> obstacleNodes;
     Vector2Int moduleSize;
     Vector2Int boardSize;
 
-    GridNode pickedGridNode;
 
     Layers layer;
+    bool floorlayer = true;
+    bool obstaclesLayer;
+    bool enemiesLayer;
+    bool eventLayer;
+
+    Tools selectedTool;
+
+    //Duplicate Tool Variables
+    List<GridNode> duplicateGroup;
+    Vector2 firstSelection;
+    Vector2 lastSelection;
+
 
     string groupName = "";
 
@@ -72,6 +86,7 @@ public class CustomRoomWindow : EditorWindow {
 
         w.floorNodes = new List<GridNode>();
         w.obstacleNodes = new List<GridNode>();
+        w.duplicateGroup = new List<GridNode>();
 
         if (!AssetDatabase.IsValidFolder("Assets/LevelDesign"))
         {
@@ -110,13 +125,13 @@ public class CustomRoomWindow : EditorWindow {
             w.obstacleModules.Add(pf);
         }
 
+        w.minSize = new Vector2(500,350);
     }
 
     private void OnGUI()
     {
         
         CheckMouseInput(Event.current);
-        
 
         roomGraph.x = graphPan.x;
         roomGraph.y = graphPan.y;
@@ -127,24 +142,28 @@ public class CustomRoomWindow : EditorWindow {
 
         BeginWindows();
         //Board Nodes
-        
-        foreach(var fN in floorNodes)
+        var otherLayersActivacted = obstaclesLayer || enemiesLayer || eventLayer;
+        if(floorlayer)
         {
-            fN.rect.width = gridSeparation;
-            fN.rect.height = gridSeparation;
-            fN.rect.x = fN.gridX * gridSeparation;
-            fN.rect.y = fN.gridY * gridSeparation; 
-            fN.color = floorModules[fN.id].color;
-            if(layer != Layers.Floor)
+            foreach(var fN in floorNodes)
             {
-                fN.color = new Color(fN.color.r,fN.color.g,fN.color.b,0.5f);
-            }else
-            {
-                fN.color = new Color(fN.color.r,fN.color.g,fN.color.b,1f);
+                fN.rect.width = gridSeparation;
+                fN.rect.height = gridSeparation;
+                fN.rect.x = fN.gridX * gridSeparation;
+                fN.rect.y = fN.gridY * gridSeparation; 
+                fN.color = floorModules[fN.id].color;
+                if(otherLayersActivacted)
+                {
+                    fN.color = Color.blue;
+                    fN.color = new Color(fN.color.r,fN.color.g,fN.color.b,0.5f);
+                }else
+                {
+                    fN.color = new Color(fN.color.r,fN.color.g,fN.color.b,1f);
+                }
+                EditorGUI.DrawRect(fN.rect, fN.color);
             }
-            EditorGUI.DrawRect(fN.rect, fN.color);
         }
-        if(layer != Layers.Floor)
+        if(obstaclesLayer)
         {
             foreach(var oN in obstacleNodes)
             {
@@ -163,6 +182,8 @@ public class CustomRoomWindow : EditorWindow {
 
         DrawGrid();
 
+        DrawSelectionForDuplicateTool();
+
         EndWindows();
 
         GUI.EndGroup();
@@ -176,6 +197,9 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUI.DrawRect(new Rect(0, 0, position.width, smallBorder), editorColor);
         EditorGUI.DrawRect(new Rect(position.width - smallBorder, 0, smallBorder, position.height), editorColor);
 
+        //Layer Border
+        EditorGUI.DrawRect(new Rect(toolBarWidth + 95, 0, position.width - toolBarWidth - smallBorder - 95 , smallBorder - 5), rulerColor);
+
         //Editor buttons
         EditorGUILayout.BeginVertical(GUILayout.Height(position.height - bottomBarheight + 20));
         EditorGUILayout.BeginHorizontal(GUILayout.Height( position.height - bottomBarheight));
@@ -187,14 +211,7 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUILayout.LabelField("Group Name");
         groupName = EditorGUILayout.TextField(groupName);
         moduleSize = EditorGUILayout.Vector2IntField("Module Dimensions", moduleSize);
-        //EditorGUILayout.LabelField("Prefab Amount: " + floorModules.Count);
-
-        /*var add = GUILayout.Button("Add Prefab");
-        if (add)
-        {
-            var pf = new ModuleNode();
-            floorModules.Add(pf);
-        }*/
+ 
         EditorGUILayout.LabelField("Selected Tool", EditorStyles.boldLabel);
         if(pickedGridNode.id < 0)
         {
@@ -215,8 +232,13 @@ public class CustomRoomWindow : EditorWindow {
             EditorGUILayout.EndHorizontal();
         }
 
+        EditorGUILayout.Space();
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField("Draw Layer", GUILayout.Width(100));
+        layer = (Layers)EditorGUILayout.EnumPopup(layer,GUILayout.Width(100));
+        EditorGUILayout.EndHorizontal();
 
-        scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250));
+        scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250), GUILayout.Height(Mathf.Max(40,(position.height - bottomBarheight - 220))));
         //Prefabs
         switch(layer)
         {
@@ -262,32 +284,41 @@ public class CustomRoomWindow : EditorWindow {
         }
         
         EditorGUILayout.EndScrollView();
-       
-        EditorGUILayout.EndVertical();
-
-        EditorGUILayout.LabelField("Zoom: ", GUILayout.Width(40));
-        var zoomIn = GUILayout.Button("+", GUILayout.Width(20));
-        var zoomOut = GUILayout.Button("-", GUILayout.Width(20));
-
-        EditorGUILayout.LabelField("Layer: ", GUILayout.Width(40));
-        layer = (Layers)EditorGUILayout.EnumPopup(layer,GUILayout.Width(100));
-        if (zoomIn) gridSeparation++;
-        if (zoomOut) gridSeparation = gridSeparation <= 10 ? 10 : gridSeparation - 1;
 
         if (GUILayout.Button("Reset"))
         {
             floorNodes = new List<GridNode>();
             obstacleNodes = new List<GridNode>();
         }
-        
-        if (GUILayout.Button("Erase"))
+        /*if (GUILayout.Button("Erase"))
         {
             pickedGridNode.SetColorAndID(Color.clear, -1);
+        }*/
+        if (GUILayout.Button("Duplicate"))
+        {
+            selectedTool = Tools.Duplicate;
         }
         if (GUILayout.Button("Create"))
         {
             CreateRoom(groupName);
         }
+
+        EditorGUILayout.EndVertical();
+
+        EditorGUILayout.LabelField("Zoom: ", GUILayout.Width(40));
+        var zoomIn = GUILayout.Button("+", GUILayout.Width(20));
+        var zoomOut = GUILayout.Button("-", GUILayout.Width(20));
+
+        EditorGUILayout.LabelField("Layers: ", EditorStyles.boldLabel, GUILayout.Width(50));
+        //layer = (Layers)EditorGUILayout.EnumPopup(layer,GUILayout.Width(100));
+        if (zoomIn) gridSeparation++;
+        if (zoomOut) gridSeparation = gridSeparation <= 10 ? 10 : gridSeparation - 1;
+
+        floorlayer = EditorGUILayout.Toggle("Floor", floorlayer);
+        obstaclesLayer = EditorGUILayout.Toggle("Obstacles", obstaclesLayer);
+        enemiesLayer = EditorGUILayout.Toggle("Enemies", enemiesLayer);
+        eventLayer = EditorGUILayout.Toggle("Event Trigger", eventLayer);
+    
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.EndVertical();
     }
@@ -316,12 +347,31 @@ public class CustomRoomWindow : EditorWindow {
 
         if(current.button == 0 && (current.type == EventType.MouseDown || current.type == EventType.MouseDrag))
         {
-            _singleTap = false;
-            DrawPrefabNode(current);
+            if(selectedTool != Tools.Duplicate)
+            {
+                DrawPrefabNode(current);
+            }else if(current.type != EventType.MouseDrag)
+            {
+                DrawDuplicateGroup(current);
+            }
         }
-        else if(current.button == 0 && current.type == EventType.MouseUp)
+        else if(current.button == 1 &&(current.type == EventType.MouseDown))
         {
-            _singleTap = true;
+            if(selectedTool == Tools.Duplicate)
+            {
+                ResetDuplicateSelection(current);
+            }
+        }
+        else if(current.button == 1 &&(current.type == EventType.MouseDown || current.type == EventType.MouseDrag))
+        {
+            if(selectedTool == Tools.Duplicate)
+            {
+                SelectDuplicateGroup(current);
+            }
+        }
+        else if(current.button == 1 && current.type == EventType.MouseUp)
+        {
+            SetDuplicateGroup();
         }
     }
 
@@ -329,7 +379,7 @@ public class CustomRoomWindow : EditorWindow {
     {
         var x = (int)((current.mousePosition.x - graphPan.x) / gridSeparation);
         var y = (int)((current.mousePosition.y - graphPan.y) / gridSeparation);
-        
+
         var id = pickedGridNode.id;
         bool isOcupied = false;
         switch(layer)
@@ -395,6 +445,86 @@ public class CustomRoomWindow : EditorWindow {
         
     }
 
+    private void DrawDuplicateGroup(Event current)
+    {
+        var x = (int)((current.mousePosition.x - graphPan.x) / gridSeparation);
+        var y = (int)((current.mousePosition.y - graphPan.y) / gridSeparation);
+
+        var minX = (int)Mathf.Min(firstSelection.x, lastSelection.x);
+        var minY = (int)Mathf.Min(firstSelection.y, lastSelection.y);
+        var maxX = (int)Mathf.Max(firstSelection.x, lastSelection.x);
+        var maxY = (int)Mathf.Max(firstSelection.y, lastSelection.y);
+
+        foreach(var dn in duplicateGroup)
+        {
+            var gX = (dn.gridX + x - minX);
+            var gY = (dn.gridY + y - minY);
+            var g = new GridNode(gX * gridSeparation, gY * gridSeparation ,gridSeparation,gridSeparation,dn.color, dn.id, gX, gY);
+            floorNodes.Add(g);
+            Repaint();
+            
+        }
+    }
+
+    private void SelectDuplicateGroup(Event current)
+    {
+        var x = (int)((current.mousePosition.x - graphPan.x) / gridSeparation);
+        var y = (int)((current.mousePosition.y - graphPan.y) / gridSeparation);
+
+        lastSelection.x = x;
+        lastSelection.y = y;
+
+    }
+
+    void ResetDuplicateSelection(Event current)
+    {
+        var x = (int)((current.mousePosition.x - graphPan.x) / gridSeparation);
+        var y = (int)((current.mousePosition.y - graphPan.y) / gridSeparation);
+
+        firstSelection.x = x;
+        firstSelection.y = y;
+        lastSelection.x = x;
+        lastSelection.y = y;
+    }
+
+    void DrawSelectionForDuplicateTool()
+    {
+        if(selectedTool == Tools.Duplicate)
+        {
+            var c = Color.yellow;
+            c = new Color(c.r,c.g,c.b,c.a/3);
+            EditorGUI.DrawRect(new Rect(firstSelection.x * gridSeparation, firstSelection.y * gridSeparation, (lastSelection.x - firstSelection.x) * gridSeparation, (lastSelection.y - firstSelection.y) * gridSeparation), c);
+            //Border Linse
+            c = Color.yellow;
+            EditorGUI.DrawRect(new Rect(firstSelection.x * gridSeparation, firstSelection.y * gridSeparation, 2 ,(lastSelection.y - firstSelection.y) * gridSeparation), c);
+            EditorGUI.DrawRect(new Rect(firstSelection.x * gridSeparation, firstSelection.y * gridSeparation, (lastSelection.x - firstSelection.x) * gridSeparation,2),c);
+            EditorGUI.DrawRect(new Rect(lastSelection.x* gridSeparation, firstSelection.y * gridSeparation, 2 ,(lastSelection.y - firstSelection.y) * gridSeparation), c);
+            EditorGUI.DrawRect(new Rect(firstSelection.x*gridSeparation, lastSelection.y * gridSeparation, (lastSelection.x - firstSelection.x) * gridSeparation + 2 ,2),c);
+            Repaint();
+        }
+    }
+
+    void SetDuplicateGroup()
+    {
+        duplicateGroup = new List<GridNode>();
+        var minX = (int)Mathf.Min(firstSelection.x, lastSelection.x);
+        var minY = (int)Mathf.Min(firstSelection.y, lastSelection.y);
+        var maxX = (int)Mathf.Max(firstSelection.x, lastSelection.x);
+        var maxY = (int)Mathf.Max(firstSelection.y, lastSelection.y);
+        for(int i = minY; i<maxY ; i++)
+        {
+            for(int j = minX; j<maxX ; j++)
+            {
+                foreach(var fn in floorNodes)
+                {
+                    if(fn.gridX == j && fn.gridY == i)
+                    {
+                        duplicateGroup.Add(fn);
+                    }
+                }
+            }
+        }
+    }
     void DrawGrid()
     {
         //Horizontal Lines
@@ -423,6 +553,30 @@ public class CustomRoomWindow : EditorWindow {
         //Horizontal Ruler
         EditorGUI.DrawRect(new Rect(toolBarWidth,smallBorder,position.width - toolBarWidth, rulerBorder), rulerColor);
         EditorGUI.DrawRect(new Rect(toolBarWidth,smallBorder + rulerBorder - 2 ,position.width - toolBarWidth, 2), rulerGUIColor);
+
+        for(int i = 0; i*gridSeparation <= position.width - graphPan.x - smallBorder; i++)
+        {
+            var b = 1;
+            if(i % gridBold == 0 )
+            {
+                b = 2;
+                //EditorGUILayout.TextField(i);
+                //TODO: Texto para la regla
+            }
+            EditorGUI.DrawRect(new Rect(i*gridSeparation + graphPan.x,smallBorder + rulerBorder/2,b,rulerBorder/2), rulerGUIColor);
+        }
+
+        for(int i = 0; i*gridSeparation <= position.width - graphPan.x - smallBorder; i++)
+        {
+            var b = 1;
+            if(i % gridBold == 0 )
+            {
+                b = 2;
+                //EditorGUILayout.TextField(i);
+                //TODO: Texto para la regla
+            }
+            EditorGUI.DrawRect(new Rect(toolBarWidth + rulerBorder/2, i*gridSeparation + graphPan.y,rulerBorder/2,b), rulerGUIColor);
+        }
 
         //Corner Square
         EditorGUI.DrawRect(new Rect(toolBarWidth, smallBorder, rulerBorder,rulerBorder), rulerColor);
@@ -469,5 +623,12 @@ public class CustomRoomWindow : EditorWindow {
         Obstacles,
         Enemies,
         EventTriggers
+    }
+
+    public enum Tools
+    {
+        Brush,
+        Eraser,
+        Duplicate
     }
 }
