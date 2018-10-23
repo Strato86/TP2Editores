@@ -48,6 +48,9 @@ public class CustomRoomWindow : EditorWindow {
     string floorFolder = "Floor prefabs";
     string obstaclesFolder = "Obstacle prefabs";
 
+    Editor _prev;
+    private Color pencilColor;
+    private Color defaultPencilColor;
     public static void OpenWindow(int amount, Vector2Int moduleSize, Vector2Int boardSize)
     {
         var w = (CustomRoomWindow)GetWindow(typeof(CustomRoomWindow));
@@ -104,12 +107,12 @@ public class CustomRoomWindow : EditorWindow {
             pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
             w.obstacleModules.Add(pf);
         }
-
     }
+
 
     private void OnGUI()
     {
-        
+        defaultPencilColor = GUI.color;
         CheckMouseInput(Event.current);
         EditorGUILayout.BeginVertical(GUILayout.Height(position.height - bottomBarheight + 20));
 
@@ -202,46 +205,45 @@ public class CustomRoomWindow : EditorWindow {
             floorModules.Add(pf);
         }*/
         EditorGUILayout.LabelField("Selected Tool", EditorStyles.boldLabel);
-        if(pickedGridNode.id < 0)
-        {
 
+        EditorGUILayout.BeginHorizontal();
+        GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(75)), (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
 
-            GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(32)), (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
-            //    Handles.DrawSolidDisc(new Vector3(rect.center.x, rect.center.y) + Vector3.back * 20, Vector3.forward + new Vector3(100, 100) / 50, 20);
-            //Handles.DrawLine(rect.center, rect.center + offset);
-
-            //  var points = new Vector3[] { rect.min + offset, rect.max + offset, rect.min + new Vector2(rect.xMin, rect.yMax) + offset, new Vector2(rect.xMax, rect.yMin) + offset };
-            var point = new Vector2(0, 120);
-            var isPressed = false;
+        var point = new Vector2(0, 120);
+        var isPressed = false;
             
-            isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position+point, Quaternion.identity, 32f, 32f, Handles.CubeHandleCap);
-            if (isPressed) {
+        isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position+point, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
+        if (isPressed) {
 
-                Debug.Log("presionó el botón ");
-                   pickedGridNode.SetColorAndID(Color.clear, -1);
-            }
-            /*   for (var i = 0; i < points.Length; i++)
-               {
-                   //Handles.ConeHandleCap(i, points[i] + Vector3.back * 20f, Quaternion.identity, 20f, EventType.Repaint);
-                   isPressed = Handles.Button(points[i] + Vector3.back * 30f, Quaternion.identity, 50f, 45f, Handles.CubeHandleCap);
-                   if (isPressed)
-                       Debug.Log("presionó el botón " + i);
-               }*/
+            Debug.Log("presionó el botón 1");
+            pickedGridNode.SetColorAndID(Color.clear, -1);
         }
-        else
+
+
+        GUI.color = pencilColor;
+        GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(75)), (Texture2D)Resources.Load("paint"), ScaleMode.ScaleToFit);
+        GUI.color = defaultPencilColor;
+        point = new Vector2(75, 120);
+         isPressed = false;
+
+        isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position + point, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
+        if (isPressed)
         {
-            EditorGUILayout.BeginHorizontal();
-            GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(32)), (Texture2D)Resources.Load("paint"), ScaleMode.ScaleToFit);
 
-            EditorGUILayout.BeginVertical();
-
-            EditorGUILayout.LabelField("id: " + (pickedGridNode.id).ToString());
-            EditorGUILayout.ColorField("Color", pickedGridNode.color);
-
-            EditorGUILayout.EndVertical();
-
-            EditorGUILayout.EndHorizontal();
+            Debug.Log("presionó el botón ");
+            pickedGridNode.SetColorAndID(Color.clear, -1);
         }
+        EditorGUILayout.EndHorizontal();
+
+      /*  EditorGUILayout.BeginVertical();
+
+        EditorGUILayout.LabelField("id: " + (pickedGridNode.id).ToString());
+        EditorGUILayout.ColorField("Color", pickedGridNode.color);
+
+        EditorGUILayout.EndVertical();
+
+        */
+   
 
 
         scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250));
@@ -251,22 +253,42 @@ public class CustomRoomWindow : EditorWindow {
             case Layers.Floor:
                 for (int i = 0; i < floorModules.Count; i++)
                 {
-                DrawLine(Color.gray);
-                floorModules[i].id = i;
-                EditorGUILayout.LabelField("id: " + (floorModules[i].id).ToString());
-                floorModules[i].color = EditorGUILayout.ColorField("Color", floorModules[i].color);
-                floorModules[i].color = new Color(floorModules[i].color.r, floorModules[i].color.g, floorModules[i].color.b, 1);
-                floorModules[i].prefab = (GameObject)EditorGUILayout.ObjectField(floorModules[i].prefab, typeof(GameObject), true);
-                if (floorModules[i].prefab)
-                {
-                    var p = GUILayout.Button("Pick");
-                    if (p)
+                    DrawLine(Color.gray);
+                    floorModules[i].id = i;
+                    EditorGUILayout.LabelField("id: " + (floorModules[i].id).ToString());
+                    floorModules[i].color = EditorGUILayout.ColorField("Color", floorModules[i].color);
+                    floorModules[i].color = new Color(floorModules[i].color.r, floorModules[i].color.g, floorModules[i].color.b, 1);
+                    floorModules[i].prefab = (GameObject)EditorGUILayout.ObjectField(floorModules[i].prefab, typeof(GameObject), true);
+                    if (floorModules[i].prefab)
                     {
-                        pickedGridNode.SetColorAndID(floorModules[i].color, floorModules[i].id);
+                        GUIStyle myS = new GUIStyle();
+                        myS.normal.background = EditorGUIUtility.whiteTexture;
+                        if (pickedGridNode.id== floorModules[i].id) {
+                            GUI.color = floorModules[i].color;
+                        }
+
+                        Texture2D texture= AssetPreview.GetAssetPreview(floorModules[i].prefab);
+                        //  GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100)), (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
+                       
+                        GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100)), texture, ScaleMode.ScaleToFit);
+
+                        GUI.color = defaultPencilColor;
+
+                        point = new Vector2(0, 120 + 70*(i+1));
+                        isPressed = false;
+                        isPressed = Handles.Button(point, Quaternion.identity, 100, 100, Handles.CubeHandleCap);
+                        if (isPressed)
+                        {
+
+                            Debug.Log("presionó el botón 2");
+                            pickedGridNode.SetColorAndID(floorModules[i].color, floorModules[i].id);
+                            pencilColor = floorModules[i].color;
+                        }
+ 
                     }
                 }
 
-                }
+
                 break;
             case Layers.Obstacles:
                 for(int i = 0; i< obstacleModules.Count; i++)
