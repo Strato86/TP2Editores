@@ -7,7 +7,7 @@ public class EventManager  : MonoBehaviour{
     public delegate void eventFunction(params object[] parameterContainer);
     public Dictionary<string , List<eventFunction>> dic= new Dictionary<string, List<eventFunction>>();
     public static EventManager instance=null;
-
+    public List<eventFunction> availableFunctions = new List<eventFunction>();
     void Awake()
     { 
         if (instance == null) {
@@ -16,13 +16,40 @@ public class EventManager  : MonoBehaviour{
     }
 
 
-    private void AddEvent(string name) {
+    public void AddAvailableFunction(eventFunction fun)
+    {
+
+
+        if (!availableFunctions.Contains(fun))
+        {
+            availableFunctions.Add(fun);
+        }
+    }
+
+    public string[] NamesAvailableFunction()
+    {
+        List<String> aux = new List<string>();
+        foreach (var fun in availableFunctions)
+        {
+            aux.Add(fun.Method.Name);
+        }
+        return aux.ToArray();
+    }
+    public void RemoveAvailableFunction(eventFunction fun)
+    {
+        if (availableFunctions.Contains(fun))
+        {
+            availableFunctions.Remove(fun);
+        }
+    }
+
+    public void AddEvent(string name) {
         if (!dic.ContainsKey(name)) {
             List<eventFunction> value = new List<eventFunction>();
             dic.Add(name, value);
         }
     }
-    private void DeleteEvent(string name)
+    public void DeleteEvent(string name)
     {
         if (dic.ContainsKey(name))
         {
@@ -58,6 +85,11 @@ public class EventManager  : MonoBehaviour{
             if (dic[name].Contains(function))
                 dic[name].Remove(function);
         }
+    }
+
+    public eventFunction GetFunctionId(int selected)
+    {
+        return availableFunctions[selected];
     }
 
     public void ExecuteEvent(string name)
