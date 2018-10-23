@@ -69,7 +69,7 @@ public class CustomRoomWindow : EditorWindow {
     string obstaclesFolder = "Obstacle prefabs";
 
     Editor _prev;
-    private Color pencilColor;
+    private Color pencilColor = Color.white;
     private Color defaultPencilColor;
     public static void OpenWindow(int amount, Vector2Int moduleSize, Vector2Int boardSize)
     {
@@ -229,20 +229,31 @@ public class CustomRoomWindow : EditorWindow {
         isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position+point, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
         if (isPressed) {
 
-            Debug.Log("presionó el botón 1");
+            //Debug.Log("presionó el botón 1");
             pickedGridNode.SetColorAndID(Color.clear, -1);
+            selectedTool = Tools.Eraser;
         }
 
-        if (pickedGridNode.id != -1) {
-            GUI.color = pencilColor;
-            GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(45)), (Texture2D)Resources.Load("paint"), ScaleMode.ScaleToFit);
-            GUI.color = defaultPencilColor;
-            point = new Vector2(75, 120);
-            isPressed = false;
+        
+        GUI.color = pencilColor;
+        GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(45)), (Texture2D)Resources.Load("paint"), ScaleMode.ScaleToFit);
+        GUI.color = defaultPencilColor;
+        point = new Vector2(75, 120);
+        isPressed = false;
 
-            isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position + point, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
+        isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position + point, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
 
+
+        GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(45)), (Texture2D)Resources.Load("WEAPON"), ScaleMode.ScaleToFit);
+        var duplicatePoint = new Vector2(150, 120);
+        var isDuplicatePressed = false;
+
+        isDuplicatePressed = Handles.Button(GUILayoutUtility.GetLastRect().position + duplicatePoint, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
+        if (isDuplicatePressed) 
+        {
+            selectedTool = Tools.Duplicate;
         }
+
  /*       if (isPressed)
         {
 
@@ -267,11 +278,12 @@ public class CustomRoomWindow : EditorWindow {
         layer = (Layers)EditorGUILayout.EnumPopup(layer,GUILayout.Width(100));
         EditorGUILayout.EndHorizontal();
 
-        scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250), GUILayout.Height(Mathf.Max(40,(position.height - bottomBarheight - 250))));
+        scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250), GUILayout.Height(Mathf.Max(40,(position.height - bottomBarheight - 220))));
         //Prefabs
         switch(layer)
         {
             case Layers.Floor:
+                if(pickedGridNode.id >= floorModules.Count) pickedGridNode.id = floorModules.Count - 1;
                 for (int i = 0; i < floorModules.Count; i++)
                 {
                     DrawLine(Color.gray);
@@ -304,6 +316,7 @@ public class CustomRoomWindow : EditorWindow {
                             Debug.Log("presionó el botón 2");
                             pickedGridNode.SetColorAndID(floorModules[i].color, floorModules[i].id);
                             pencilColor = floorModules[i].color;
+                            selectedTool = Tools.Brush;
                         }
  
                     }
@@ -312,6 +325,7 @@ public class CustomRoomWindow : EditorWindow {
 
                 break;
             case Layers.Obstacles:
+                if(pickedGridNode.id >= obstacleModules.Count) pickedGridNode.id = obstacleModules.Count - 1;
                 for(int i = 0; i< obstacleModules.Count; i++)
                 {
                     DrawLine(Color.gray);
@@ -322,10 +336,34 @@ public class CustomRoomWindow : EditorWindow {
                     obstacleModules[i].prefab = (GameObject)EditorGUILayout.ObjectField(obstacleModules[i].prefab, typeof(GameObject), true);
                     if (obstacleModules[i].prefab)
                     {
-                        var p = GUILayout.Button("Pick");
+                        /*var p = GUILayout.Button("Pick");
                         if (p)
                         {
                             pickedGridNode.SetColorAndID(obstacleModules[i].color, obstacleModules[i].id);
+                        }*/
+                        GUIStyle myS = new GUIStyle();
+                        myS.normal.background = EditorGUIUtility.whiteTexture;
+                        if (pickedGridNode.id== obstacleModules[i].id) {
+                            GUI.color = obstacleModules[i].color;
+                        }
+
+                        Texture2D texture= AssetPreview.GetAssetPreview(obstacleModules[i].prefab);
+                        //  GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100)), (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
+                       
+                        GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100)), texture, ScaleMode.ScaleToFit);
+
+                        GUI.color = defaultPencilColor;
+
+                        point = new Vector2(0, 250+(200*i));
+                        isPressed = false;
+                        isPressed = Handles.Button(point, Quaternion.identity, 100, 100, Handles.CubeHandleCap);
+                        if (isPressed)
+                        {
+
+                            //Debug.Log("presionó el botón 2");
+                            pickedGridNode.SetColorAndID(obstacleModules[i].color, obstacleModules[i].id);
+                            pencilColor = obstacleModules[i].color;
+                            selectedTool = Tools.Brush;
                         }
                     }
                 }
@@ -338,14 +376,6 @@ public class CustomRoomWindow : EditorWindow {
         {
             floorNodes = new List<GridNode>();
             obstacleNodes = new List<GridNode>();
-        }
-        /*if (GUILayout.Button("Erase"))
-        {
-            pickedGridNode.SetColorAndID(Color.clear, -1);
-        }*/
-        if (GUILayout.Button("Duplicate"))
-        {
-            selectedTool = Tools.Duplicate;
         }
         if (GUILayout.Button("Create"))
         {
@@ -483,7 +513,7 @@ public class CustomRoomWindow : EditorWindow {
                     {
                         if(obstacleNodes[i].gridX == x && obstacleNodes[i].gridY == y)
                         {
-                            floorNodes.RemoveAt(i);
+                            obstacleNodes.RemoveAt(i);
                             Repaint();
                         }
                     }
