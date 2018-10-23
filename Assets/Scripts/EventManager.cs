@@ -3,9 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EventManager  {
+public class EventManager  : MonoBehaviour{
     public delegate void eventFunction(params object[] parameterContainer);
-    private Dictionary<string , List<eventFunction>> dic= new Dictionary<string, List<eventFunction>>();
+    public Dictionary<string , List<eventFunction>> dic= new Dictionary<string, List<eventFunction>>();
     public static EventManager instance=null;
 
     void Awake()
@@ -29,7 +29,18 @@ public class EventManager  {
             dic.Remove(name);
         }
     }
-
+    public bool HasAFunction(string name, eventFunction function)
+    {
+        if (!dic.ContainsKey(name))
+        {
+            return false;
+        }
+        if (!dic[name].Contains(function))
+        {
+            return false;
+        }
+        return true; 
+    }
     public void SubscribeEvent(string name, eventFunction function)
     {
         if (!dic.ContainsKey(name)) {
