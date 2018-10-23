@@ -207,7 +207,7 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUILayout.LabelField("Selected Tool", EditorStyles.boldLabel);
 
         EditorGUILayout.BeginHorizontal();
-        GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(75)), (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
+        GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(45)), (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
 
         var point = new Vector2(0, 120);
         var isPressed = false;
@@ -219,20 +219,22 @@ public class CustomRoomWindow : EditorWindow {
             pickedGridNode.SetColorAndID(Color.clear, -1);
         }
 
+        if (pickedGridNode.id != -1) {
+            GUI.color = pencilColor;
+            GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(45)), (Texture2D)Resources.Load("paint"), ScaleMode.ScaleToFit);
+            GUI.color = defaultPencilColor;
+            point = new Vector2(75, 120);
+            isPressed = false;
 
-        GUI.color = pencilColor;
-        GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(75)), (Texture2D)Resources.Load("paint"), ScaleMode.ScaleToFit);
-        GUI.color = defaultPencilColor;
-        point = new Vector2(75, 120);
-         isPressed = false;
+            isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position + point, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
 
-        isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position + point, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
-        if (isPressed)
+        }
+ /*       if (isPressed)
         {
 
             Debug.Log("presionó el botón ");
             pickedGridNode.SetColorAndID(Color.clear, -1);
-        }
+        }*/
         EditorGUILayout.EndHorizontal();
 
       /*  EditorGUILayout.BeginVertical();
@@ -274,7 +276,7 @@ public class CustomRoomWindow : EditorWindow {
 
                         GUI.color = defaultPencilColor;
 
-                        point = new Vector2(0, 120 + 70*(i+1));
+                        point = new Vector2(0, 250+(200*i));
                         isPressed = false;
                         isPressed = Handles.Button(point, Quaternion.identity, 100, 100, Handles.CubeHandleCap);
                         if (isPressed)

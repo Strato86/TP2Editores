@@ -297,7 +297,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\kfjfk.cs" />
     <Compile Include="Assets\Scripts\EventManager.cs" />
     <Compile Include="Assets\Scripts\GridNode.cs" />
     <Compile Include="Assets\Scripts\ModuleNode.cs" />
