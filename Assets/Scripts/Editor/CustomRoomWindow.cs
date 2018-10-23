@@ -56,7 +56,8 @@ public class CustomRoomWindow : EditorWindow {
     Tools selectedTool;
 
     //Duplicate Tool Variables
-    List<GridNode> duplicateGroup;
+    List<GridNode> duplicateFloorGroup;
+    List<GridNode> duplicateObstacleGroup;
     Vector2 firstSelection;
     Vector2 lastSelection;
 
@@ -82,11 +83,12 @@ public class CustomRoomWindow : EditorWindow {
         }
         w.moduleSize = moduleSize;
         w.boardSize = boardSize;
-        w.pickedGridNode = new GridNode(0, 0, 0, 0, Color.clear,-1,0,0);
+        w.pickedGridNode = new GridNode();
 
         w.floorNodes = new List<GridNode>();
         w.obstacleNodes = new List<GridNode>();
-        w.duplicateGroup = new List<GridNode>();
+        w.duplicateFloorGroup = new List<GridNode>();
+        w.duplicateObstacleGroup = new List<GridNode>();
 
         if (!AssetDatabase.IsValidFolder("Assets/LevelDesign"))
         {
@@ -238,7 +240,7 @@ public class CustomRoomWindow : EditorWindow {
         layer = (Layers)EditorGUILayout.EnumPopup(layer,GUILayout.Width(100));
         EditorGUILayout.EndHorizontal();
 
-        scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250), GUILayout.Height(Mathf.Max(40,(position.height - bottomBarheight - 220))));
+        scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250), GUILayout.Height(Mathf.Max(40,(position.height - bottomBarheight - 250))));
         //Prefabs
         switch(layer)
         {
@@ -379,7 +381,7 @@ public class CustomRoomWindow : EditorWindow {
     {
         var x = (int)((current.mousePosition.x - graphPan.x) / gridSeparation);
         var y = (int)((current.mousePosition.y - graphPan.y) / gridSeparation);
-
+        GridNode auxNode = new GridNode();
         var id = pickedGridNode.id;
         bool isOcupied = false;
         switch(layer)
@@ -388,7 +390,10 @@ public class CustomRoomWindow : EditorWindow {
                 foreach(var g in floorNodes)
                 {
                     if(!isOcupied)
+                    {
                         isOcupied = (g.gridX == x && g.gridY == y);
+                        auxNode = g;
+                    }
                 }
                 if(id < 0 && isOcupied)
                 {
@@ -403,12 +408,16 @@ public class CustomRoomWindow : EditorWindow {
                 }
                 else if(id >= 0)
                 {
-                    if(x < boardSize.x && y < boardSize.y && !isOcupied)
+                    if(!isOcupied)
                     {
                         var g = new GridNode(x *gridSeparation,y*gridSeparation,gridSeparation,gridSeparation,pickedGridNode.color, pickedGridNode.id,x,y);
                         floorNodes.Add(g);
-                        Repaint();
                     }
+                    else
+                    {
+                        auxNode.SetColorAndID(pickedGridNode.color, id);
+                    }
+                    Repaint();
                 }
                 break;
 
@@ -416,7 +425,10 @@ public class CustomRoomWindow : EditorWindow {
                 foreach(var g in obstacleNodes)
                 {
                     if(!isOcupied)
+                    {
                         isOcupied = (g.gridX == x && g.gridY == y);
+                        auxNode = g;
+                    }
                 }
                 if(id < 0 && isOcupied)
                 {
@@ -431,12 +443,15 @@ public class CustomRoomWindow : EditorWindow {
                 }
                 else if(id >= 0)
                 {
-                    if(x < boardSize.x && y < boardSize.y && !isOcupied)
+                    if(!isOcupied)
                     {
                         var g = new GridNode(x *gridSeparation,y*gridSeparation,gridSeparation,gridSeparation,pickedGridNode.color, pickedGridNode.id,x,y);
                         obstacleNodes.Add(g);
-                        Repaint();
+                    }else
+                    {
+                        auxNode.SetColorAndID(pickedGridNode.color, id);
                     }
+                    Repaint();
                 }
                 break;
         }
@@ -455,14 +470,52 @@ public class CustomRoomWindow : EditorWindow {
         var maxX = (int)Mathf.Max(firstSelection.x, lastSelection.x);
         var maxY = (int)Mathf.Max(firstSelection.y, lastSelection.y);
 
-        foreach(var dn in duplicateGroup)
+        if(floorlayer)
         {
-            var gX = (dn.gridX + x - minX);
-            var gY = (dn.gridY + y - minY);
-            var g = new GridNode(gX * gridSeparation, gY * gridSeparation ,gridSeparation,gridSeparation,dn.color, dn.id, gX, gY);
-            floorNodes.Add(g);
-            Repaint();
-            
+            foreach(var dn in duplicateFloorGroup)
+            {
+                var gX = (dn.gridX + x - minX);
+                var gY = (dn.gridY + y - minY);
+                var ocupied = false;
+                foreach(var n in floorNodes)
+                {
+                    if(n.gridX == gX && n.gridY == gY)
+                    {
+                        n.SetColorAndID(dn.color, dn.id);
+                        break;
+                    }
+                }
+                if(!ocupied)
+                {
+                    var g = new GridNode(gX * gridSeparation, gY * gridSeparation ,gridSeparation,gridSeparation,dn.color, dn.id, gX, gY);
+                    floorNodes.Add(g);
+                }
+                Repaint();
+                
+            }
+        }
+        if(obstaclesLayer)
+        {
+            foreach(var dob in duplicateObstacleGroup)
+            {
+                var gX = (dob.gridX + x - minX);
+                var gY = (dob.gridY + y - minY);
+                var ocupied = false;
+                foreach(var n in obstacleNodes)
+                {
+                    if(n.gridX == gX && n.gridY == gY)
+                    {
+                        n.SetColorAndID(dob.color, dob.id);
+                        break;
+                    }
+                }
+                if(!ocupied)
+                {
+                    var g = new GridNode(gX * gridSeparation, gY * gridSeparation ,gridSeparation,gridSeparation,dob.color, dob.id, gX, gY);
+                    obstacleNodes.Add(g);
+                }
+                Repaint(); 
+            }
         }
     }
 
@@ -506,7 +559,8 @@ public class CustomRoomWindow : EditorWindow {
 
     void SetDuplicateGroup()
     {
-        duplicateGroup = new List<GridNode>();
+        duplicateFloorGroup = new List<GridNode>();
+        duplicateObstacleGroup = new List<GridNode>();
         var minX = (int)Mathf.Min(firstSelection.x, lastSelection.x);
         var minY = (int)Mathf.Min(firstSelection.y, lastSelection.y);
         var maxX = (int)Mathf.Max(firstSelection.x, lastSelection.x);
@@ -515,11 +569,24 @@ public class CustomRoomWindow : EditorWindow {
         {
             for(int j = minX; j<maxX ; j++)
             {
-                foreach(var fn in floorNodes)
+                if(floorlayer)
                 {
-                    if(fn.gridX == j && fn.gridY == i)
+                    foreach(var fn in floorNodes)
                     {
-                        duplicateGroup.Add(fn);
+                        if(fn.gridX == j && fn.gridY == i)
+                        {
+                            duplicateFloorGroup.Add(fn);
+                        }
+                    }
+                }
+                if(obstaclesLayer)
+                {
+                    foreach(var on in obstacleNodes)
+                    {
+                        if(on.gridX == j && on.gridY == i)
+                        {
+                            duplicateObstacleGroup.Add(on);
+                        }
                     }
                 }
             }
