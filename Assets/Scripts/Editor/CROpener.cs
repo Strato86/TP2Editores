@@ -12,11 +12,17 @@ public class CROpener : EditorWindow {
         var w = (CROpener)GetWindow(typeof(CROpener));
     }
 
+
+
     private void OnGUI()
     {
         if (GUILayout.Button("Open Editor"))
         {
             CustomRoomWindow.OpenWindow(0, Vector2Int.zero, Vector2Int.zero);
+        }
+        if (GUILayout.Button("Open Event Manager"))
+        {
+            EventManagerWindow.OpenWindow();
         }
     }
 }
