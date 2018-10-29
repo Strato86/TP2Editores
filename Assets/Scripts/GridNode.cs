@@ -11,6 +11,14 @@ public class GridNode{
 
     public int gridX, gridY;
 
+    public GridNode()
+    {
+        color = Color.clear;
+        id = -1;
+        gridX = -1;
+        gridY = -1;
+    }
+
     public GridNode (float x, float y, float width, float heigth, Color col, int id, int gX, int gY)
     {
         rect = new Rect(x, y, width, heigth);
