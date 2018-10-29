@@ -1,53 +1,48 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
-using UnityEditor;
 using UnityEngine;
+using UnityEditor;
+using UnityEngine.Events;
 
-
-public class EventManagerWindow : EditorWindow
+[CustomEditor(typeof(EventManager))]
+public class EventManagerEditor : Editor
 {
+    EventManager em;
     string newEventName;
     GameObject obj;
+    private GUIStyle _titleStyle;
     int selected;
-
-    public static void OpenWindow()
+    public UnityEvent myEvent;
+    private void OnEnable()
     {
-        var w = (EventManagerWindow)GetWindow(typeof(EventManagerWindow));
-        
+        em = (EventManager)target;
+
+        _titleStyle = new GUIStyle();
+        _titleStyle.fontStyle = FontStyle.Bold;
+        _titleStyle.alignment = TextAnchor.MiddleCenter;
+
+
     }
 
 
-    private void OnGUI()
+    public override void OnInspectorGUI()
     {
 
-        EditorGUILayout.LabelField("Seleccione su objeto EventManager");
-        obj = (GameObject)EditorGUILayout.ObjectField(obj, typeof(GameObject), true);
 
-        if (obj == null) {
-            EditorGUILayout.HelpBox("Selecciona un objeto EventManager", MessageType.Info);
-            return;
-        }
-        EventManager em =obj.GetComponent<EventManager>();
-        if (em == null) {
-            EditorGUILayout.HelpBox("No es un EventManager", MessageType.Info);
-            return;
-        }
         em.AddAvailableFunction(PrintHelloWorld);
         em.AddAvailableFunction(PrintHi);
         em.AddAvailableFunction(PrintBye);
-        EditorGUILayout.LabelField("Todos los eventos");
-        Debug.Log("instance event manager"+ em);
+        EditorGUILayout.LabelField("Todos los eventos", _titleStyle);
+        Debug.Log("instance event manager" + em);
         Debug.Log("instance event manager dic" + em);
-         Dictionary<string, List<EventManager.eventFunction>> dic = em.dic;
+        Dictionary<string, List<EventManager.eventFunction>> dic = em.dic;
 
         EditorGUILayout.Space();
         EditorGUILayout.Space();
         foreach (var key in dic.Keys)
         {
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Nombre del evento: "+ key);
+            EditorGUILayout.LabelField("Nombre del evento: " + key);
             if (GUILayout.Button("Delete"))
             {
                 em.DeleteEvent(key);
@@ -55,7 +50,8 @@ public class EventManagerWindow : EditorWindow
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
-           foreach (var value in dic[key]) {
+            foreach (var value in dic[key])
+            {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField("fun: " + value.Method.Name);
                 if (GUILayout.Button("Delete"))
@@ -65,21 +61,27 @@ public class EventManagerWindow : EditorWindow
                 }
                 EditorGUILayout.EndHorizontal();
             }
-            selected = EditorGUILayout.Popup("New function",selected, em.NamesAvailableFunction());
+
+            this.serializedObject.Update();
+            EditorGUILayout.PropertyField(this.serializedObject.FindProperty("onEvent"), true);
+            this.serializedObject.ApplyModifiedProperties();
+
             if (GUILayout.Button("Add function"))
             {
-                 em.SubscribeEvent(key, em.GetFunctionId(selected));
+                Debug.Log(this.serializedObject.FindProperty("onEvent"));
+                em.SubscribeEvent(key, em.GetFunctionId(selected));
                 return;
             }
         }
 
-
-
+        EditorGUILayout.Space();
+        EditorGUILayout.Space();
         Rect rect = EditorGUILayout.GetControlRect(false, 1f);
         rect.height = 1f;
         EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 1));
-
-        EditorGUILayout.LabelField("Create new event");
+        EditorGUILayout.Space();
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Create new event",_titleStyle);
         EditorGUILayout.BeginHorizontal();
         newEventName = EditorGUILayout.TextField(newEventName);
         if (GUILayout.Button("Create"))
@@ -103,6 +105,4 @@ public class EventManagerWindow : EditorWindow
     {
         Debug.Log("HelloWorld");
     }
-
-
 }

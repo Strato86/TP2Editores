@@ -2,12 +2,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class EventManager  : MonoBehaviour{
     public delegate void eventFunction(params object[] parameterContainer);
     public Dictionary<string , List<eventFunction>> dic= new Dictionary<string, List<eventFunction>>();
     public static EventManager instance=null;
     public List<eventFunction> availableFunctions = new List<eventFunction>();
+
+    [Serializable]
+    public class EventHandler : UnityEvent<eventFunction> { }
+
+    public EventHandler onEvent = new EventHandler();
     void Awake()
     { 
         if (instance == null) {
@@ -23,6 +29,7 @@ public class EventManager  : MonoBehaviour{
         if (!availableFunctions.Contains(fun))
         {
             availableFunctions.Add(fun);
+            
         }
     }
 

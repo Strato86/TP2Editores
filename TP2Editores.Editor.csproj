@@ -305,6 +305,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Editor\CROpener.cs" />
     <Compile Include="Assets\Scripts\Editor\CustomRoomWindow.cs" />
+    <Compile Include="Assets\Scripts\Editor\EventManagerEditor.cs" />
     <Compile Include="Assets\Scripts\Editor\EventManagerWindow.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
