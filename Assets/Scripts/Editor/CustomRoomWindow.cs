@@ -642,7 +642,7 @@ public class CustomRoomWindow : EditorWindow {
                         if(obstacleNodes[j].gridX == duplicateObstacleGroup[i].gridX 
                         && obstacleNodes[j].gridY == duplicateObstacleGroup[i].gridY)
                         {
-                            floorNodes.RemoveAt(j);
+                            obstacleNodes.RemoveAt(j);
                         }
                     }
                 }
