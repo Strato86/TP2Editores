@@ -329,9 +329,16 @@ public class CustomRoomWindow : EditorWindow {
                             }
 
                             Texture2D texture= AssetPreview.GetAssetPreview(floorModules[i].prefab);
-                            //  GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100)), (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
-                        
-                            GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100)), texture, ScaleMode.ScaleToFit);
+                                //  GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100)), (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
+
+                            GUI.color = Color.yellow;
+                                var rec = GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100));
+                                GUI.DrawTexture(rec, (Texture2D)Resources.Load("FreshLemEDT"), ScaleMode.ScaleToFit);
+                                GUI.color = defaultColor;
+                                var rec2 = GUILayoutUtility.GetLastRect();
+                                rec2.size = new Vector2(90f,90f);
+                                rec2.position = rec2.position + new Vector2(5, 5);
+                            GUI.DrawTexture(rec2, texture, ScaleMode.ScaleToFit);
 
                             GUI.color = defaultColor;
 
