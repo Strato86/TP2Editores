@@ -72,7 +72,7 @@ public class CustomRoomWindow : EditorWindow {
 
     Editor _prev;
     private Color pencilColor = Color.white;
-    private Color defaultPencilColor;
+    private Color defaultColor;
 
     public static void OpenWindow(int amount, Vector2Int moduleSize, Vector2Int boardSize)
     {
@@ -140,7 +140,7 @@ public class CustomRoomWindow : EditorWindow {
 
     private void OnGUI()
     {
-        defaultPencilColor = GUI.color;
+        defaultColor = GUI.color;
         CheckMouseInput(Event.current);
 
         roomGraph.x = graphPan.x;
@@ -227,25 +227,44 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUILayout.LabelField("Selected Tool", EditorStyles.boldLabel);
 
         EditorGUILayout.BeginHorizontal();
-        GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(45)), (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
 
-        var point = new Vector2(0, 120);
-        var isPressed = false;
-            
-        isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position+point, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
-        if (isPressed) {
+        var opts = new GUILayoutOption[] { GUILayout.Width(50), GUILayout.Height(50) };
+        if (selectedTool == Tools.Eraser) {
+            GUI.color = Color.green;
+        }
+        if (GUILayout.Button((Texture2D)Resources.Load("eraser"), opts))
+        {
 
-            //Debug.Log("presionó el botón 1");
             pickedGridNode.SetColorAndID(Color.clear, -1);
             selectedTool = Tools.Eraser;
         }
+        GUI.color = defaultColor;
+   /*     var rect = GUILayoutUtility.GetRect(32, 32, GUILayout.Width(45));
+        Repaint();
 
-        
+        if (rect.width != 1f)
+        {
+            GUI.DrawTexture(rect, (Texture2D)Resources.Load("eraser"), ScaleMode.ScaleToFit);
+
+            var isPressedButton1 = false;
+
+            isPressedButton1 = Handles.Button(rect.position, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
+            if (isPressedButton1)
+            {
+                //Debug.Log("presionó el botón 1");
+                pickedGridNode.SetColorAndID(Color.clear, -1);
+                selectedTool = Tools.Eraser;
+            }
+
+        }
+        */
+
+
         GUI.color = pencilColor;
         GUI.DrawTexture(GUILayoutUtility.GetRect(32, 32, GUILayout.Width(45)), (Texture2D)Resources.Load("paint"), ScaleMode.ScaleToFit);
-        GUI.color = defaultPencilColor;
-        point = new Vector2(75, 120);
-        isPressed = false;
+        GUI.color = defaultColor;
+        var point = new Vector2(75, 120);
+        var isPressed = false;
 
         isPressed = Handles.Button(GUILayoutUtility.GetLastRect().position + point, Quaternion.identity, 45f, 45f, Handles.CubeHandleCap);
 
@@ -314,7 +333,7 @@ public class CustomRoomWindow : EditorWindow {
                         
                             GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100)), texture, ScaleMode.ScaleToFit);
 
-                            GUI.color = defaultPencilColor;
+                            GUI.color = defaultColor;
 
                             point = new Vector2(0, 250+(200*i));
                             isPressed = false;
@@ -361,7 +380,7 @@ public class CustomRoomWindow : EditorWindow {
                         
                             GUI.DrawTexture(GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100)), texture, ScaleMode.ScaleToFit);
 
-                            GUI.color = defaultPencilColor;
+                            GUI.color = defaultColor;
 
                             point = new Vector2(0, 250+(200*i));
                             isPressed = false;
