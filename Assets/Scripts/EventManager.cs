@@ -7,7 +7,6 @@ using UnityEngine.Events;
 
 public class EventManager  : MonoBehaviour{
 
-
     [Serializable]
     public class EventHandler : UnityEvent
     {
@@ -16,8 +15,8 @@ public class EventManager  : MonoBehaviour{
     public EventHandler onEvent = new EventHandler();
 
     [SerializeField]
-    public List< EventHandler> events = new List<EventHandler>();
-    public List<string> eventsNames = new List<string>();
+    public  List< EventHandler> events = new List<EventHandler>();
+    public  List<string> eventsNames = new List<string>();
 
 
     public void AddEvent(string name) {
@@ -37,9 +36,15 @@ public class EventManager  : MonoBehaviour{
         }
     }
 
+    public  void ExecuteEvent(List<string> names)
+    {
+        foreach (var name in names)
+        {
+            ExecuteEvent(name);
+        }
+    }
 
-
-    public void ExecuteEvent(string name)
+    public  void ExecuteEvent(string name)
     {
         if (eventsNames.Contains(name))
         {

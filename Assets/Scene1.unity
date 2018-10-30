@@ -156,40 +156,8 @@ MonoBehaviour:
         m_CallState: 2
     m_TypeName: EventManager+EventHandler, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
-  events:
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_MethodName: 
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 0}
-        m_MethodName: 
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_TypeName: EventManager+EventHandler, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-      PublicKeyToken=null
-  - m_PersistentCalls:
-      m_Calls: []
-    m_TypeName: EventManager+EventHandler, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-      PublicKeyToken=null
-  eventsNames:
-  - yuyu
-  - yuyr
+  events: []
+  eventsNames: []
 --- !u!4 &121263095
 Transform:
   m_ObjectHideFlags: 0
@@ -268,6 +236,48 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!1001 &695740368
+Prefab:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4477665758846916, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: 0.9856596
+      objectReference: {fileID: 0}
+    - target: {fileID: 4477665758846916, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
+      propertyPath: m_LocalPosition.y
+      value: -1.0588975
+      objectReference: {fileID: 0}
+    - target: {fileID: 4477665758846916, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0.66756606
+      objectReference: {fileID: 0}
+    - target: {fileID: 4477665758846916, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4477665758846916, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4477665758846916, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4477665758846916, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4477665758846916, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
+      propertyPath: m_RootOrder
+      value: 4
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 100100000, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
+  m_IsPrefabParent: 0
 --- !u!1 &1112002608
 GameObject:
   m_ObjectHideFlags: 0
