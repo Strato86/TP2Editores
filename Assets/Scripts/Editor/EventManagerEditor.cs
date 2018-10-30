@@ -29,49 +29,36 @@ public class EventManagerEditor : Editor
     {
 
 
-        em.AddAvailableFunction(PrintHelloWorld);
-        em.AddAvailableFunction(PrintHi);
-        em.AddAvailableFunction(PrintBye);
+
         EditorGUILayout.LabelField("Todos los eventos", _titleStyle);
         Debug.Log("instance event manager" + em);
         Debug.Log("instance event manager dic" + em);
-        Dictionary<string, List<EventManager.eventFunction>> dic = em.dic;
+
 
         EditorGUILayout.Space();
         EditorGUILayout.Space();
-        foreach (var key in dic.Keys)
+        for (int i = 0; i < em.eventsNames.Count; i++)
+
         {
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Nombre del evento: " + key);
+            EditorGUILayout.LabelField("Evento: " + em.eventsNames[i],_titleStyle);
             if (GUILayout.Button("Delete"))
             {
-                em.DeleteEvent(key);
+                em.DeleteEvent(em.eventsNames[i]);
                 return;
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space();
-            foreach (var value in dic[key])
-            {
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("fun: " + value.Method.Name);
-                if (GUILayout.Button("Delete"))
-                {
-                    em.UnsubscribeEvent(key, value);
-                    return;
-                }
-                EditorGUILayout.EndHorizontal();
-            }
+
 
             this.serializedObject.Update();
-            EditorGUILayout.PropertyField(this.serializedObject.FindProperty("onEvent"), true);
+
+            var a = this.serializedObject.FindProperty("events");
+
+            EditorGUILayout.PropertyField(a.GetArrayElementAtIndex(i), true);
             this.serializedObject.ApplyModifiedProperties();
 
-            if (GUILayout.Button("Add function"))
-            {
-                Debug.Log(this.serializedObject.FindProperty("onEvent"));
-                em.SubscribeEvent(key, em.GetFunctionId(selected));
-                return;
-            }
+
         }
 
         EditorGUILayout.Space();
