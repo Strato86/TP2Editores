@@ -199,12 +199,11 @@ public class CustomRoomWindow : EditorWindow {
                 tN.rect.height = gridSeparation;
                 tN.rect.x = tN.gridX * gridSeparation;
                 tN.rect.y = tN.gridY * gridSeparation;
-                //      tN.color = triggerNodes[tN.id].color;
-                tN.color = Color.red;
+                tN.color = triggerNodes[tN.id].color;
                 EditorGUI.DrawRect(tN.rect, tN.color);
-         //       var c = defaultColor;
-       //         var r = new Rect(tN.rect.x + gridSeparation / 3, tN.rect.y + gridSeparation / 3, gridSeparation / 3, gridSeparation / 3);
-     //           EditorGUI.DrawRect(r, c);
+                var c = defaultColor;
+                var r = new Rect(tN.rect.x + gridSeparation / 3, tN.rect.y + gridSeparation / 3, gridSeparation / 3, gridSeparation / 3);
+                EditorGUI.DrawRect(r, c);
             }
         }
 
@@ -430,7 +429,7 @@ public class CustomRoomWindow : EditorWindow {
             EditorGUILayout.BeginVertical();
             EditorGUILayout.LabelField("id: " + (list[i].id).ToString());
             list[i].color = EditorGUILayout.ColorField("Color", list[i].color);
-            list[i].color = new Color(list[i].color.r, list[i].color.g, list[i].color.b, 1);
+            list[i].color = new Color(list[i].color.r, list[i].color.g, list[i].color.b, 1f);
             list[i].prefab = (GameObject)EditorGUILayout.ObjectField(list[i].prefab, typeof(GameObject), true);
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndHorizontal();
@@ -493,83 +492,64 @@ public class CustomRoomWindow : EditorWindow {
     {
         var x = (int)((current.mousePosition.x - graphPan.x) / gridSeparation);
         var y = (int)((current.mousePosition.y - graphPan.y) / gridSeparation);
-        GridNode auxNode = new GridNode();
-        var id = pickedGridNode.id;
-        bool isOcupied = false;
         switch(layer)
         {
             case Layers.Floor:
-                foreach(var g in floorNodes)
-                {
-                    if(!isOcupied)
-                    {
-                        isOcupied = (g.gridX == x && g.gridY == y);
-                        auxNode = g;
-                    }
-                }
-                if(id < 0 && isOcupied)
-                {
-                    for(var i = floorNodes.Count-1; i >= 0;i--)
-                    {
-                        if(floorNodes[i].gridX == x && floorNodes[i].gridY == y)
-                        {
-                            floorNodes.RemoveAt(i);
-                            Repaint();
-                        }
-                    }
-                }
-                else if(id >= 0)
-                {
-                    if(!isOcupied)
-                    {
-                        var g = new GridNode(x *gridSeparation,y*gridSeparation,gridSeparation,gridSeparation,pickedGridNode.color, pickedGridNode.id,x,y);
-                        floorNodes.Add(g);
-                    }
-                    else
-                    {
-                        auxNode.SetColorAndID(pickedGridNode.color, id);
-                    }
-                    Repaint();
-                }
+                PaintSquareScreen(x, y, floorNodes);
                 break;
 
             case Layers.Obstacles:
-                foreach(var g in obstacleNodes)
-                {
-                    if(!isOcupied)
-                    {
-                        isOcupied = (g.gridX == x && g.gridY == y);
-                        auxNode = g;
-                    }
-                }
-                if(id < 0 && isOcupied)
-                {
-                    for(var i = obstacleNodes.Count-1; i >= 0;i--)
-                    {
-                        if(obstacleNodes[i].gridX == x && obstacleNodes[i].gridY == y)
-                        {
-                            obstacleNodes.RemoveAt(i);
-                            Repaint();
-                        }
-                    }
-                }
-                else if(id >= 0)
-                {
-                    if(!isOcupied)
-                    {
-                        var g = new GridNode(x *gridSeparation,y*gridSeparation,gridSeparation,gridSeparation,pickedGridNode.color, pickedGridNode.id,x,y);
-                        obstacleNodes.Add(g);
-                    }else
-                    {
-                        auxNode.SetColorAndID(pickedGridNode.color, id);
-                    }
-                    Repaint();
-                }
+                PaintSquareScreen(x, y, obstacleNodes);
+                break;
+
+            case Layers.EventTriggers:
+                PaintSquareScreen(x, y, triggerNodes);
                 break;
         }
         
 
         
+    }
+
+    private void PaintSquareScreen(int x, int y, List<GridNode> gridList)
+    {
+
+        GridNode auxNode = new GridNode();
+
+        bool isOcupied = false;
+        var id = pickedGridNode.id;
+        foreach (var g in gridList)
+        {
+            if (!isOcupied)
+            {
+                isOcupied = (g.gridX == x && g.gridY == y);
+                auxNode = g;
+            }
+        }
+        if (id < 0 && isOcupied)
+        {
+            for (var i = gridList.Count - 1; i >= 0; i--)
+            {
+                if (gridList[i].gridX == x && gridList[i].gridY == y)
+                {
+                    gridList.RemoveAt(i);
+                    Repaint();
+                }
+            }
+        }
+        else if (id >= 0)
+        {
+            if (!isOcupied)
+            {
+                var g = new GridNode(x * gridSeparation, y * gridSeparation, gridSeparation, gridSeparation, pickedGridNode.color, pickedGridNode.id, x, y);
+                gridList.Add(g);
+            }
+            else
+            {
+                auxNode.SetColorAndID(pickedGridNode.color, id);
+            }
+            Repaint();
+        }
     }
 
     private void DrawDuplicateGroup(Event current)
