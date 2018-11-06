@@ -219,11 +219,12 @@ public class CustomRoomWindow : EditorWindow {
                 tN.rect.height = gridSeparation;
                 tN.rect.x = tN.gridX * gridSeparation;
                 tN.rect.y = tN.gridY * gridSeparation;
-                tN.color = triggerNodes[tN.id].color;
+                //      tN.color = triggerNodes[tN.id].color;
+                tN.color = Color.red;
                 EditorGUI.DrawRect(tN.rect, tN.color);
-                var c = defaultColor;
-                var r = new Rect(tN.rect.x + gridSeparation / 3, tN.rect.y + gridSeparation / 3, gridSeparation / 3, gridSeparation / 3);
-                EditorGUI.DrawRect(r, c);
+         //       var c = defaultColor;
+       //         var r = new Rect(tN.rect.x + gridSeparation / 3, tN.rect.y + gridSeparation / 3, gridSeparation / 3, gridSeparation / 3);
+     //           EditorGUI.DrawRect(r, c);
             }
         }
 
@@ -338,29 +339,15 @@ public class CustomRoomWindow : EditorWindow {
             case Tools.Brush:
             switch(layer)
             {
-                case Layers.Floor:
-                    if(pickedGridNode.id >= floorModules.Count) pickedGridNode.id = floorModules.Count - 1;
-                        for (int i = 0; i < floorModules.Count; i++)
-                        {
-                            DrawPrefabModule(floorModules, i);
-                        }
-
-
+                    case Layers.Floor:
+                        DrawPrefabModuleFromList(floorModules);
                         break;
-                case Layers.Obstacles:
-                    if(pickedGridNode.id >= obstacleModules.Count) pickedGridNode.id = obstacleModules.Count - 1;
-                        for(int i = 0; i< obstacleModules.Count; i++)
-                        {
-                            DrawPrefabModule(obstacleModules, i);
-                        }
+                    case Layers.Obstacles:
+                        DrawPrefabModuleFromList(obstacleModules);
                         break;
-                case Layers.EventTriggers:
-                    if (pickedGridNode.id >= triggerModules.Count) pickedGridNode.id = triggerModules.Count - 1;
-                    for (int i = 0; i < triggerModules.Count; i++)
-                    {
-                        DrawPrefabModule(triggerModules, i);
-                    }
-                    break;
+                    case Layers.EventTriggers:
+                        DrawPrefabModuleFromList(triggerModules);
+                        break;
                 }
                 break;
             
@@ -415,6 +402,15 @@ public class CustomRoomWindow : EditorWindow {
     
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.EndVertical();
+    }
+
+    private void DrawPrefabModuleFromList(List<ModuleNode> list)
+    {
+        if (pickedGridNode.id >= list.Count) pickedGridNode.id = list.Count - 1;
+        for (int i = 0; i < list.Count; i++)
+        {
+            DrawPrefabModule(list, i);
+        }
     }
 
     private void DrawPrefabModule(List<ModuleNode> list, int i)
@@ -744,6 +740,13 @@ public class CustomRoomWindow : EditorWindow {
             for(int i = 0 ; i< duplicateObstacleGroup.Count; i++)
             {
                 DrawObstacleSelectionPreview(duplicateObstacleGroup[i].gridX + x - minX, duplicateObstacleGroup[i].gridY + y - minY);
+            }
+        }
+        if (eventLayer)
+        {
+            for (int i = 0; i < duplicateTriggerGroup.Count; i++)
+            {
+                DrawObstacleSelectionPreview(duplicateTriggerGroup[i].gridX + x - minX, duplicateTriggerGroup[i].gridY + y - minY);
             }
         }
     }
