@@ -9,6 +9,7 @@ public class CustomRoomWindow : EditorWindow {
 
     List<ModuleNode> floorModules;
     List<ModuleNode> obstacleModules;
+    List<ModuleNode> triggerModules;
     Rect roomGraph;
     float toolBarWidth = 250;
     float bottomBarheight = 10;
@@ -44,6 +45,7 @@ public class CustomRoomWindow : EditorWindow {
     List<GridNode> floorNodes;
     GridNode pickedGridNode;
     List<GridNode> obstacleNodes;
+    List<GridNode> triggerNodes;
     Vector2Int moduleSize;
     Vector2Int boardSize;
 
@@ -60,6 +62,7 @@ public class CustomRoomWindow : EditorWindow {
     //Duplicate Tool Variables
     List<GridNode> duplicateFloorGroup;
     List<GridNode> duplicateObstacleGroup;
+    List<GridNode> duplicateTriggerGroup;
     Vector2 firstSelection;
     Vector2 lastSelection;
 
@@ -69,6 +72,7 @@ public class CustomRoomWindow : EditorWindow {
     string prefabRoute = "LevelCreator";
     string floorFolder = "Floor prefabs";
     string obstaclesFolder = "Obstacle prefabs";
+    string triggerFolder = "Trigger Prefabs";
 
     Editor _prev;
     private Color pencilColor = Color.white;
@@ -81,6 +85,7 @@ public class CustomRoomWindow : EditorWindow {
         var w = (CustomRoomWindow)GetWindow(typeof(CustomRoomWindow));
         w.floorModules = new List<ModuleNode>();
         w.obstacleModules = new List<ModuleNode>();
+        w.triggerModules = new List<ModuleNode>();
 
         w.graphPan = new Vector2(w.toolBarWidth + w.rulerBorder, w.smallBorder + w.rulerBorder);
         w.initialGraphPan = w.graphPan;
@@ -96,8 +101,10 @@ public class CustomRoomWindow : EditorWindow {
 
         w.floorNodes = new List<GridNode>();
         w.obstacleNodes = new List<GridNode>();
+        w.triggerNodes = new List<GridNode>();
         w.duplicateFloorGroup = new List<GridNode>();
         w.duplicateObstacleGroup = new List<GridNode>();
+        w.duplicateTriggerGroup = new List<GridNode>();
 
         if (!AssetDatabase.IsValidFolder("Assets/LevelDesign"))
         {
@@ -134,6 +141,19 @@ public class CustomRoomWindow : EditorWindow {
             var pf = new ModuleNode();
             pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
             w.obstacleModules.Add(pf);
+        }
+
+        folders[0] = "Assets/LevelDesign/" + w.triggerFolder;
+        Debug.Log("busco en la carpeta" + folders[0]);
+        paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+            Debug.Log("hay algo en la carpeta");
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+            w.triggerModules.Add(pf);
         }
 
         w.minSize = new Vector2(500,350);
@@ -189,6 +209,22 @@ public class CustomRoomWindow : EditorWindow {
                 var r = new Rect(oN.rect.x + gridSeparation/3, oN.rect.y + gridSeparation/3,gridSeparation/3,gridSeparation/3);
                 EditorGUI.DrawRect(r,c);
             }   
+        }
+
+        if (eventLayer)
+        {
+            foreach (var tN in triggerNodes)
+            {
+                tN.rect.width = gridSeparation;
+                tN.rect.height = gridSeparation;
+                tN.rect.x = tN.gridX * gridSeparation;
+                tN.rect.y = tN.gridY * gridSeparation;
+                tN.color = triggerNodes[tN.id].color;
+                EditorGUI.DrawRect(tN.rect, tN.color);
+                var c = defaultColor;
+                var r = new Rect(tN.rect.x + gridSeparation / 3, tN.rect.y + gridSeparation / 3, gridSeparation / 3, gridSeparation / 3);
+                EditorGUI.DrawRect(r, c);
+            }
         }
 
         DrawGrid();
@@ -316,55 +352,15 @@ public class CustomRoomWindow : EditorWindow {
                         for(int i = 0; i< obstacleModules.Count; i++)
                         {
                             DrawPrefabModule(obstacleModules, i);
-                            /*                          DrawLine(Color.gray);
-                                                      obstacleModules[i].id = i;
-                                                      EditorGUILayout.BeginHorizontal();
-
-                                                      if (obstacleModules[i].prefab)
-                                                      {
-
-                                                          GUIStyle myS = new GUIStyle();
-                                                          GUI.color = defaultColor;
-                                                          myS.normal.background = EditorGUIUtility.whiteTexture;
-                                                          if (pickedGridNode.id == obstacleModules[i].id)
-                                                          {
-                                                              GUI.color = Color.yellow;
-                                                          }
-
-                                                          Texture2D texture = AssetPreview.GetAssetPreview(obstacleModules[i].prefab);
-                                                          var rec = GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100));
-                                                          //GUI.DrawTexture(rec, (Texture2D)Resources.Load("FreshLemEDT"), ScaleMode.ScaleToFit);
-                                                          EditorGUI.DrawRect(rec, GUI.color);
-                                                          var rec2 = GUILayoutUtility.GetLastRect();
-                                                          rec2.size = new Vector2(90f, 90f);
-                                                          rec2.position = rec2.position + new Vector2(5, 5);
-
-                                                          GUI.color = defaultColor;
-                                                          GUI.DrawTexture(rec2, texture, ScaleMode.ScaleToFit);
-
-                                                          var point = new Vector2(0, 250 + (200 * i));
-                                                          var isPressed = false;
-                                                          isPressed = Handles.Button(point, Quaternion.identity, 100, 100, Handles.CubeHandleCap);
-                                                          if (isPressed)
-                                                          {
-
-
-                                                              selectedTool = Tools.Brush;
-                                                              pickedGridNode.SetColorAndID(obstacleModules[i].color, obstacleModules[i].id);
-                                                          }
-
-                                                          EditorGUILayout.BeginVertical();
-
-                                                          EditorGUILayout.LabelField("id: " + (obstacleModules[i].id).ToString());
-                                                          obstacleModules[i].color = EditorGUILayout.ColorField("Color", obstacleModules[i].color);
-                                                          obstacleModules[i].color = new Color(obstacleModules[i].color.r, obstacleModules[i].color.g, obstacleModules[i].color.b, 1);
-                                                          obstacleModules[i].prefab = (GameObject)EditorGUILayout.ObjectField(obstacleModules[i].prefab, typeof(GameObject), true);
-                                                          EditorGUILayout.EndVertical();
-                                                          EditorGUILayout.EndHorizontal();
-                                                      }
-                                                  */
                         }
                         break;
+                case Layers.EventTriggers:
+                    if (pickedGridNode.id >= triggerModules.Count) pickedGridNode.id = triggerModules.Count - 1;
+                    for (int i = 0; i < triggerModules.Count; i++)
+                    {
+                        DrawPrefabModule(triggerModules, i);
+                    }
+                    break;
                 }
                 break;
             
@@ -615,90 +611,81 @@ public class CustomRoomWindow : EditorWindow {
         {
             if(floorlayer)
             {
-                for(int i = 0; i< duplicateFloorGroup.Count; i++)
-                {
-                    for(int j = floorNodes.Count - 1; j >= 0 ; j--)
-                    {
-                        if(floorNodes[j].gridX == duplicateFloorGroup[i].gridX 
-                        && floorNodes[j].gridY == duplicateFloorGroup[i].gridY)
-                        {
-                            floorNodes.RemoveAt(j);
-                        }
-                    }
-                }
+                SelectMovingGroup(floorNodes,duplicateFloorGroup);
             }
-            if(obstaclesLayer)
+            if (obstaclesLayer)
             {
-                for(int i = 0; i< duplicateObstacleGroup.Count; i++)
-                {
-                    for(int j = obstacleNodes.Count - 1; j >= 0 ; j--)
-                    {
-                        if(obstacleNodes[j].gridX == duplicateObstacleGroup[i].gridX 
-                        && obstacleNodes[j].gridY == duplicateObstacleGroup[i].gridY)
-                        {
-                            obstacleNodes.RemoveAt(j);
-                        }
-                    }
-                }
+                SelectMovingGroup(obstacleNodes, duplicateObstacleGroup);
+            }
+            if (eventLayer) {
+                SelectMovingGroup(triggerNodes, duplicateTriggerGroup);
             }
         }
 
         if(floorlayer)
         {
-            foreach(var dn in duplicateFloorGroup)
-            {
-                var gX = (dn.gridX + x - minX);
-                var gY = (dn.gridY + y - minY);
-                var ocupied = false;
-                foreach(var n in floorNodes)
-                {
-                    if(n.gridX == gX && n.gridY == gY)
-                    {
-                        n.SetColorAndID(dn.color, dn.id);
-                        break;
-                    }
-                }
-                if(!ocupied)
-                {
-                    var g = new GridNode(gX * gridSeparation, gY * gridSeparation ,gridSeparation,gridSeparation,dn.color, dn.id, gX, gY);
-                    floorNodes.Add(g);
-                }
-                Repaint();
-                
-            }
+            MoveGroup(floorNodes, duplicateFloorGroup, x, y, minX, minY);
         }
         if(obstaclesLayer)
         {
-            foreach(var dob in duplicateObstacleGroup)
-            {
-                var gX = (dob.gridX + x - minX);
-                var gY = (dob.gridY + y - minY);
-                var ocupied = false;
-                foreach(var n in obstacleNodes)
-                {
-                    if(n.gridX == gX && n.gridY == gY)
-                    {
-                        n.SetColorAndID(dob.color, dob.id);
-                        break;
-                    }
-                }
-                if(!ocupied)
-                {
-                    var g = new GridNode(gX * gridSeparation, gY * gridSeparation ,gridSeparation,gridSeparation,dob.color, dob.id, gX, gY);
-                    obstacleNodes.Add(g);
-                }
-                Repaint(); 
-            }
+            MoveGroup(obstacleNodes,duplicateObstacleGroup, x, y, minX, minY);
         }
 
-        if(duplicateToolTip == DuplicateToolTip.Move)
+        if (eventLayer)
+        {
+            MoveGroup(triggerNodes, duplicateTriggerGroup, x, y, minX, minY);
+        }
+
+        if (duplicateToolTip == DuplicateToolTip.Move)
         {
             duplicateFloorGroup = new List<GridNode>();
             duplicateObstacleGroup = new List<GridNode>();
+            duplicateTriggerGroup = new List<GridNode>();
             firstSelection = new Vector2Int();
             lastSelection = new Vector2Int();
         }
     }
+
+    private void MoveGroup(List<GridNode> nodes, List<GridNode> duplicateGroup,int x, int y, int minX, int minY)
+    {
+        foreach (var dob in duplicateGroup)
+        {
+            var gX = (dob.gridX + x - minX);
+            var gY = (dob.gridY + y - minY);
+            var ocupied = false;
+            foreach (var n in nodes)
+            {
+                if (n.gridX == gX && n.gridY == gY)
+                {
+                    n.SetColorAndID(dob.color, dob.id);
+                    break;
+                }
+            }
+            if (!ocupied)
+            {
+                var g = new GridNode(gX * gridSeparation, gY * gridSeparation, gridSeparation, gridSeparation, dob.color, dob.id, gX, gY);
+                nodes.Add(g);
+            }
+            Repaint();
+        }
+    }
+
+    private void SelectMovingGroup(List<GridNode> nodes, List<GridNode> duplicateGroup)
+    {
+        for (int i = 0; i < duplicateGroup.Count; i++)
+        {
+            for (int j = nodes.Count - 1; j >= 0; j--)
+            {
+                if (nodes[j].gridX == duplicateGroup[i].gridX
+                && nodes[j].gridY == duplicateGroup[i].gridY)
+                {
+                    nodes.RemoveAt(j);
+                }
+            }
+        }
+    }
+
+
 
     private void SelectDuplicateGroup(Event current)
     {
@@ -765,6 +752,7 @@ public class CustomRoomWindow : EditorWindow {
     {
         duplicateFloorGroup = new List<GridNode>();
         duplicateObstacleGroup = new List<GridNode>();
+        duplicateTriggerGroup = new List<GridNode>();
         var minX = (int)Mathf.Min(firstSelection.x, lastSelection.x);
         var minY = (int)Mathf.Min(firstSelection.y, lastSelection.y);
         var maxX = (int)Mathf.Max(firstSelection.x, lastSelection.x);
@@ -793,6 +781,17 @@ public class CustomRoomWindow : EditorWindow {
                         }
                     }
                 }
+                if (eventLayer)
+                {
+                    foreach (var tn in triggerNodes)
+                    {
+                        if (tn.gridX == j && tn.gridY == i)
+                        {
+                            duplicateTriggerGroup.Add(tn);
+                        }
+                    }
+                }
+
             }
         }
     }
@@ -898,24 +897,30 @@ public class CustomRoomWindow : EditorWindow {
 
         foreach(var fN in floorNodes)
         {
-            var pos = new Vector3(-fN.gridX * moduleSize.x, 0f, fN.gridY * moduleSize.y);
-            var pf = PrefabUtility.InstantiatePrefab(floorModules[fN.id].prefab);
-            var go = ((GameObject)pf);
-            go.transform.position = pos;
-            go.transform.rotation = Quaternion.identity;
-            go.transform.SetParent(goParent.transform);
+            CreatwPrefab(goParent, fN, floorModules);
         }
 
-        foreach(var oN in obstacleNodes)
+        foreach (var oN in obstacleNodes)
         {
-            var pos = new Vector3(-oN.gridX * moduleSize.x, 0f, oN.gridY * moduleSize.y);
-            var pf = PrefabUtility.InstantiatePrefab(obstacleModules[oN.id].prefab);
-            var go = ((GameObject)pf);
-            go.transform.position = pos;
-            go.transform.rotation = Quaternion.identity;
-            go.transform.SetParent(goParent.transform);
+
+            CreatwPrefab(goParent, oN, obstacleModules);
         }
 
+        foreach (var tr in triggerNodes)
+        {
+
+            CreatwPrefab(goParent, tr, triggerModules);
+        }
+    }
+
+    private void CreatwPrefab(GameObject goParent, GridNode node, List<ModuleNode> list)
+    {
+        var pos = new Vector3(-node.gridX * moduleSize.x, 0f, node.gridY * moduleSize.y);
+        var pf = PrefabUtility.InstantiatePrefab(list[node.id].prefab);
+        var go = ((GameObject)pf);
+        go.transform.position = pos;
+        go.transform.rotation = Quaternion.identity;
+        go.transform.SetParent(goParent.transform);
     }
 
     private void DrawLine(Color col, bool bold = false, bool vertical = false)
