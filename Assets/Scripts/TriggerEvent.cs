@@ -42,14 +42,14 @@ public class TriggerEvent : MonoBehaviour {
 
     private void OnTriggerEnter(Collider other)
     {
-        if (_type == Type.Enter) {
+        if (_type == Type.Enter && ((1 << other.gameObject.layer) & layersTriggereable) != 0) {
             ExecuteAllEvents();
         }
     }
 
     private void OnTriggerStay(Collider other)
     {
-        if (_type == Type.Stay)
+        if (_type == Type.Stay && ((1 << other.gameObject.layer) & layersTriggereable) != 0)
         {
             ExecuteAllEvents();
         }
@@ -57,7 +57,7 @@ public class TriggerEvent : MonoBehaviour {
 
     private void OnTriggerExit(Collider other)
     {
-        if (_type == Type.Exit)
+        if (_type == Type.Exit && ((1 << other.gameObject.layer) & layersTriggereable) != 0)
         {
             ExecuteAllEvents();
         }

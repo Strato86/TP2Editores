@@ -2194,7 +2194,7 @@ GameObject:
   - component: {fileID: 1633054833}
   - component: {fileID: 1633054832}
   - component: {fileID: 1633054836}
-  m_Layer: 0
+  m_Layer: 4
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2261,7 +2261,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1633054831}
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -28.78, y: 1.06, z: 13.16}
+  m_LocalPosition: {x: -27.828, y: 1.06, z: 13.16}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -2555,6 +2555,15 @@ Prefab:
     - target: {fileID: 4477665758846916, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
       propertyPath: m_RootOrder
       value: 48
+      objectReference: {fileID: 0}
+    - target: {fileID: 114003072096493756, guid: c6c36eeb224e0044ba5e75ad0a8c01e3,
+        type: 2}
+      propertyPath: eventManager
+      value: 
+      objectReference: {fileID: 121263094}
+    - target: {fileID: 1542047427205780, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
+      propertyPath: m_Name
+      value: CubeTrigger
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: c6c36eeb224e0044ba5e75ad0a8c01e3, type: 2}
