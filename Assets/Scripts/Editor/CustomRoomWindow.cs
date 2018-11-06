@@ -91,7 +91,7 @@ public class CustomRoomWindow : EditorWindow {
         w.initialGraphPan = w.graphPan;
         w.roomGraph = new Rect(w.toolBarWidth + w.rulerBorder, w.smallBorder + w.rulerBorder, 1000000, 1000000);
 
-        if(boardSize == Vector2Int.zero)
+        if (boardSize == Vector2Int.zero)
         {
             boardSize = new Vector2Int(80, 50);
         }
@@ -118,47 +118,27 @@ public class CustomRoomWindow : EditorWindow {
         {
             AssetDatabase.CreateFolder("Assets/LevelDesign", w.obstaclesFolder);
         }
-        string[] folders = new string[1];
-        folders[0] = "Assets/LevelDesign/" + w.floorFolder;
-        var paths = AssetDatabase.FindAssets("t: Object", folders);
-        
-        for (int i = 0; i < paths.Length; i++)
-        {
-            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
-
-            var pf = new ModuleNode();
-            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
-            w.floorModules.Add(pf);
-        }
-
-        folders[0] = "Assets/LevelDesign/" + w.obstaclesFolder;
-        paths = AssetDatabase.FindAssets("t: Object", folders);
-        
-        for (int i = 0; i < paths.Length; i++)
-        {
-            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
-
-            var pf = new ModuleNode();
-            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
-            w.obstacleModules.Add(pf);
-        }
-
-        folders[0] = "Assets/LevelDesign/" + w.triggerFolder;
-        Debug.Log("busco en la carpeta" + folders[0]);
-        paths = AssetDatabase.FindAssets("t: Object", folders);
-
-        for (int i = 0; i < paths.Length; i++)
-        {
-            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
-            Debug.Log("hay algo en la carpeta");
-            var pf = new ModuleNode();
-            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
-            w.triggerModules.Add(pf);
-        }
-
-        w.minSize = new Vector2(500,350);
+        LoadModuleListFromFolder(w.floorModules, w.floorFolder);
+        LoadModuleListFromFolder(w.obstacleModules, w.obstaclesFolder);
+        LoadModuleListFromFolder(w.triggerModules, w.triggerFolder);
+        w.minSize = new Vector2(500, 350);
     }
 
+    private static void LoadModuleListFromFolder(List<ModuleNode> moduleList, string folderName)
+    {
+        string[] folders = new string[1];
+        folders[0] = "Assets/LevelDesign/" + folderName;
+        var paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+            moduleList.Add(pf);
+        }
+    }
 
     private void OnGUI()
     {
