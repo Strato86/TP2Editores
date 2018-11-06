@@ -37,7 +37,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1542047427205780}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.9856596, y: -1.0588975, z: 0.66756606}
+  m_LocalPosition: {x: 71.92, y: -1.0588975, z: 0.66756606}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -49,7 +49,7 @@ MeshRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1542047427205780}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -109,9 +109,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _type: 0
   nameEvents:
-  - firef
+  - saludos
   layersTriggereable:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 55
   deactivateAfterUse: 0
   eventManager: {fileID: 0}

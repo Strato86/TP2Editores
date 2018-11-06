@@ -22,26 +22,26 @@ public class TriggerEventsEditor : Editor
         _titleStyle = new GUIStyle();
         _titleStyle.fontStyle = FontStyle.Bold;
         _titleStyle.alignment = TextAnchor.MiddleCenter;
-
+        GetEventManager();
 
     }
 
-    public bool GetEventManager()
+    public void  GetEventManager()
     {
         object[] objs = Object.FindObjectsOfType(typeof(EventManager));
         if (objs.Length != 1)
         {
-            return false;
+            em=null;
         }
         em = objs[0] as EventManager;
-        return true;
+        trigEv.eventManager = em;
     }
 
     public override void OnInspectorGUI()
     {
-        if (!GetEventManager())
+        if (em == null)
         {
-            EditorGUILayout.HelpBox("No puede tener mas de un Event Manager en la escena", MessageType.Error);
+            EditorGUILayout.HelpBox("No se encontro el event manager en la escena, recuerde que tiene que tener uno si o si", MessageType.Error);
             return;
         }
 

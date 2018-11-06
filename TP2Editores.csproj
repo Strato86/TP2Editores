@@ -302,6 +302,7 @@
     <Compile Include="Assets\Scripts\GridNode.cs" />
     <Compile Include="Assets\Scripts\ModuleNode.cs" />
     <Compile Include="Assets\Scripts\TriggerEvent.cs" />
+    <Compile Include="Assets\TestEvent.cs" />
     <Compile Include="Assets\ThrowEvent.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

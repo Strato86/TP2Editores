@@ -325,6 +325,7 @@ public class CustomRoomWindow : EditorWindow {
                         DrawPrefabModuleFromList(obstacleModules);
                         break;
                     case Layers.EventTriggers:
+
                         DrawPrefabModuleFromList(triggerModules);
                         foreach (var item in triggerModules)
                         {
@@ -415,8 +416,16 @@ public class CustomRoomWindow : EditorWindow {
             {
                 GUI.color = Color.yellow;
             }
-
-            Texture2D texture = AssetPreview.GetAssetPreview(list[i].prefab);
+            Texture2D texture;
+            if (layer == Layers.EventTriggers)
+            {
+                list[i].prefab.SetActive(true);
+                 texture = AssetPreview.GetAssetPreview(list[i].prefab);
+                list[i].prefab.SetActive(false);
+            }
+            else {
+                 texture = AssetPreview.GetAssetPreview(list[i].prefab);
+            }
             var rec = GUILayoutUtility.GetRect(100, 100, GUILayout.Width(100));
             //GUI.DrawTexture(rec, (Texture2D)Resources.Load("FreshLemEDT"), ScaleMode.ScaleToFit);
             EditorGUI.DrawRect(rec, GUI.color);
@@ -869,25 +878,25 @@ public class CustomRoomWindow : EditorWindow {
 
         foreach(var fN in floorNodes)
         {
-            CreatwPrefab(goParent, fN, floorModules);
+            CreatePrefab(goParent, fN, floorModules);
         }
 
         foreach (var oN in obstacleNodes)
         {
 
-            CreatwPrefab(goParent, oN, obstacleModules);
+            CreatePrefab(goParent, oN, obstacleModules);
         }
 
         foreach (var tr in triggerNodes)
         {
 
-            CreatwPrefab(goParent, tr, triggerModules);
+            CreatePrefab(goParent, tr, triggerModules, moduleSize.y);
         }
     }
 
-    private void CreatwPrefab(GameObject goParent, GridNode node, List<ModuleNode> list)
+    private void CreatePrefab(GameObject goParent, GridNode node, List<ModuleNode> list, float height=0)
     {
-        var pos = new Vector3(-node.gridX * moduleSize.x, 0f, node.gridY * moduleSize.y);
+        var pos = new Vector3(-node.gridX * moduleSize.x, height, node.gridY * moduleSize.y);
         var pf = PrefabUtility.InstantiatePrefab(list[node.id].prefab);
         var go = ((GameObject)pf);
         go.transform.position = pos;

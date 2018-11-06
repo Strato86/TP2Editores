@@ -11,6 +11,21 @@ public class TriggerEvent : MonoBehaviour {
     public bool deactivateAfterUse=false;
     public EventManager eventManager;
 
+    public void GetEventManager()
+    {
+        object[] objs = UnityEngine.Object.FindObjectsOfType(typeof(EventManager));
+        if (objs.Length != 1)
+        {
+            eventManager = null;
+        }
+        eventManager = objs[0] as EventManager;
+
+    }
+
+    private void Start()
+    {
+        GetEventManager();
+    }
     public void AddEvent(string name) {
         if (!nameEvents.Contains(name)) {
             nameEvents.Add(name);
@@ -34,7 +49,7 @@ public class TriggerEvent : MonoBehaviour {
 
     private void OnTriggerStay(Collider other)
     {
-        if (_type == Type.Enter)
+        if (_type == Type.Stay)
         {
             ExecuteAllEvents();
         }
@@ -42,7 +57,7 @@ public class TriggerEvent : MonoBehaviour {
 
     private void OnTriggerExit(Collider other)
     {
-        if (_type == Type.Enter)
+        if (_type == Type.Exit)
         {
             ExecuteAllEvents();
         }
@@ -50,6 +65,10 @@ public class TriggerEvent : MonoBehaviour {
 
     private void ExecuteAllEvents()
     {
+        if (eventManager == null) {
+            print("ERROR: No tenes un Event Manager en escena, no se van a ejecutar los eventos");
+            return;
+        }
         foreach (var name in nameEvents)
         {
             eventManager.ExecuteEvent(name);
