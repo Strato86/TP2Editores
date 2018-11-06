@@ -54,5 +54,8 @@ public class TriggerEvent : MonoBehaviour {
         {
             eventManager.ExecuteEvent(name);
         }
+        if (deactivateAfterUse) {
+            this.gameObject.SetActive(false);
+        }
     }
 }

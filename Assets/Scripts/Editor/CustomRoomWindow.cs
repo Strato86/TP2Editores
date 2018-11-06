@@ -326,6 +326,13 @@ public class CustomRoomWindow : EditorWindow {
                         break;
                     case Layers.EventTriggers:
                         DrawPrefabModuleFromList(triggerModules);
+                        foreach (var item in triggerModules)
+                        {
+                            if (item.prefab.GetComponent<TriggerEvent>() == null) {
+                                EditorGUILayout.HelpBox("Alguno de los objectos en Trigger prefab no tiene un trigger event",MessageType.Warning);
+                                break;
+                            }
+                        }
                         break;
                 }
                 break;
@@ -386,11 +393,13 @@ public class CustomRoomWindow : EditorWindow {
     private void DrawPrefabModuleFromList(List<ModuleNode> list)
     {
         if (pickedGridNode.id >= list.Count) pickedGridNode.id = list.Count - 1;
+
         for (int i = 0; i < list.Count; i++)
         {
             DrawPrefabModule(list, i);
         }
     }
+
 
     private void DrawPrefabModule(List<ModuleNode> list, int i)
     {
@@ -429,7 +438,7 @@ public class CustomRoomWindow : EditorWindow {
             EditorGUILayout.BeginVertical();
             EditorGUILayout.LabelField("id: " + (list[i].id).ToString());
             list[i].color = EditorGUILayout.ColorField("Color", list[i].color);
-            list[i].color = new Color(list[i].color.r, list[i].color.g, list[i].color.b, 1f);
+            list[i].color = new Color(list[i].color.r, list[i].color.g, list[i].color.b, 1);
             list[i].prefab = (GameObject)EditorGUILayout.ObjectField(list[i].prefab, typeof(GameObject), true);
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndHorizontal();
