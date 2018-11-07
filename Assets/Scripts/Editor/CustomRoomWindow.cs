@@ -96,7 +96,7 @@ public class CustomRoomWindow : EditorWindow {
         w.initialGraphPan = w.graphPan;
         w.roomGraph = new Rect(w.toolBarWidth + w.rulerBorder, w.smallBorder + w.rulerBorder, 1000000, 1000000);
 
-        if(boardSize == Vector2Int.zero)
+        if (boardSize == Vector2Int.zero)
         {
             boardSize = new Vector2Int(80, 50);
         }
@@ -130,7 +130,7 @@ public class CustomRoomWindow : EditorWindow {
         string[] folders = new string[1];
         folders[0] = "Assets/LevelDesign/" + w.floorFolder;
         var paths = AssetDatabase.FindAssets("t: Object", folders);
-        
+
         for (int i = 0; i < paths.Length; i++)
         {
             paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
@@ -141,12 +141,13 @@ public class CustomRoomWindow : EditorWindow {
         }
 
         folders[0] = "Assets/LevelDesign/" + w.obstaclesFolder;
+        Debug.Log("busco en la carpeta" + folders[0]);
         paths = AssetDatabase.FindAssets("t: Object", folders);
-        
+
         for (int i = 0; i < paths.Length; i++)
         {
             paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
-
+            Debug.Log("hay algo en la carpeta");
             var pf = new ModuleNode();
             pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
             w.obstacleModules.Add(pf);
@@ -179,7 +180,6 @@ public class CustomRoomWindow : EditorWindow {
         }
         w.minSize = new Vector2(500,350);
     }
-
 
     private void OnGUI()
     {
@@ -231,6 +231,22 @@ public class CustomRoomWindow : EditorWindow {
                 EditorGUI.DrawRect(r,c);
             }   
         }
+        if (eventLayer)
+        {
+            foreach (var tN in triggerNodes)
+            {
+                tN.rect.width = gridSeparation;
+                tN.rect.height = gridSeparation;
+                tN.rect.x = tN.gridX * gridSeparation;
+                tN.rect.y = tN.gridY * gridSeparation;
+                tN.color = triggerNodes[tN.id].color;
+                EditorGUI.DrawRect(tN.rect, tN.color);
+                var c = defaultColor;
+                var r = new Rect(tN.rect.x + gridSeparation / 3, tN.rect.y + gridSeparation / 3, gridSeparation / 3, gridSeparation / 3);
+                EditorGUI.DrawRect(r, c);
+            }
+        }
+
         if (eventLayer)
         {
             foreach (var tN in triggerNodes)
@@ -367,12 +383,16 @@ public class CustomRoomWindow : EditorWindow {
                         }
                         break;
                 case Layers.EventTriggers:
-                    if (pickedGridNode.id >= triggerModules.Count) pickedGridNode.id = triggerModules.Count - 1;
-                    for (int i = 0; i < triggerModules.Count; i++)
-                    {
-                        DrawPrefabModule(triggerModules, i);
-                    }
-                    break;
+
+                        DrawPrefabModuleFromList(triggerModules);
+                        foreach (var item in triggerModules)
+                        {
+                            if (item.prefab.GetComponent<TriggerEvent>() == null) {
+                                EditorGUILayout.HelpBox("Alguno de los objectos en Trigger prefab no tiene un trigger event",MessageType.Warning);
+                                break;
+                            }
+                        }
+                        break;
                 }
                 break;
             
@@ -519,8 +539,7 @@ public class CustomRoomWindow : EditorWindow {
                     EditorGUILayout.LabelField(_roomsToLoad[i], myS);
                 }
                 EditorGUILayout.EndScrollView();
-
-            break;
+                break;
         }
         
         EditorGUILayout.EndScrollView();
@@ -562,6 +581,17 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.EndVertical();
     }
+
+    private void DrawPrefabModuleFromList(List<ModuleNode> list)
+    {
+        if (pickedGridNode.id >= list.Count) pickedGridNode.id = list.Count - 1;
+
+        for (int i = 0; i < list.Count; i++)
+        {
+            DrawPrefabModule(list, i);
+        }
+    }
+
 
     private void DrawPrefabModule(List<ModuleNode> list, int i)
     {
@@ -663,83 +693,64 @@ public class CustomRoomWindow : EditorWindow {
     {
         var x = (int)((current.mousePosition.x - graphPan.x) / gridSeparation);
         var y = (int)((current.mousePosition.y - graphPan.y) / gridSeparation);
-        GridNode auxNode = new GridNode();
-        var id = pickedGridNode.id;
-        bool isOcupied = false;
         switch(layer)
         {
             case Layers.Floor:
-                foreach(var g in floorNodes)
-                {
-                    if(!isOcupied)
-                    {
-                        isOcupied = (g.gridX == x && g.gridY == y);
-                        auxNode = g;
-                    }
-                }
-                if(id < 0 && isOcupied)
-                {
-                    for(var i = floorNodes.Count-1; i >= 0;i--)
-                    {
-                        if(floorNodes[i].gridX == x && floorNodes[i].gridY == y)
-                        {
-                            floorNodes.RemoveAt(i);
-                            Repaint();
-                        }
-                    }
-                }
-                else if(id >= 0)
-                {
-                    if(!isOcupied)
-                    {
-                        var g = new GridNode(x *gridSeparation,y*gridSeparation,gridSeparation,gridSeparation,pickedGridNode.color, pickedGridNode.id,x,y);
-                        floorNodes.Add(g);
-                    }
-                    else
-                    {
-                        auxNode.SetColorAndID(pickedGridNode.color, id);
-                    }
-                    Repaint();
-                }
+                PaintSquareScreen(x, y, floorNodes);
                 break;
 
             case Layers.Obstacles:
-                foreach(var g in obstacleNodes)
-                {
-                    if(!isOcupied)
-                    {
-                        isOcupied = (g.gridX == x && g.gridY == y);
-                        auxNode = g;
-                    }
-                }
-                if(id < 0 && isOcupied)
-                {
-                    for(var i = obstacleNodes.Count-1; i >= 0;i--)
-                    {
-                        if(obstacleNodes[i].gridX == x && obstacleNodes[i].gridY == y)
-                        {
-                            obstacleNodes.RemoveAt(i);
-                            Repaint();
-                        }
-                    }
-                }
-                else if(id >= 0)
-                {
-                    if(!isOcupied)
-                    {
-                        var g = new GridNode(x *gridSeparation,y*gridSeparation,gridSeparation,gridSeparation,pickedGridNode.color, pickedGridNode.id,x,y);
-                        obstacleNodes.Add(g);
-                    }else
-                    {
-                        auxNode.SetColorAndID(pickedGridNode.color, id);
-                    }
-                    Repaint();
-                }
+                PaintSquareScreen(x, y, obstacleNodes);
+                break;
+
+            case Layers.EventTriggers:
+                PaintSquareScreen(x, y, triggerNodes);
                 break;
         }
         
 
         
+    }
+
+    private void PaintSquareScreen(int x, int y, List<GridNode> gridList)
+    {
+
+        GridNode auxNode = new GridNode();
+
+        bool isOcupied = false;
+        var id = pickedGridNode.id;
+        foreach (var g in gridList)
+        {
+            if (!isOcupied)
+            {
+                isOcupied = (g.gridX == x && g.gridY == y);
+                auxNode = g;
+            }
+        }
+        if (id < 0 && isOcupied)
+        {
+            for (var i = gridList.Count - 1; i >= 0; i--)
+            {
+                if (gridList[i].gridX == x && gridList[i].gridY == y)
+                {
+                    gridList.RemoveAt(i);
+                    Repaint();
+                }
+            }
+        }
+        else if (id >= 0)
+        {
+            if (!isOcupied)
+            {
+                var g = new GridNode(x * gridSeparation, y * gridSeparation, gridSeparation, gridSeparation, pickedGridNode.color, pickedGridNode.id, x, y);
+                gridList.Add(g);
+            }
+            else
+            {
+                auxNode.SetColorAndID(pickedGridNode.color, id);
+            }
+            Repaint();
+        }
     }
 
     private void DrawDuplicateGroup(Event current)
@@ -831,6 +842,8 @@ public class CustomRoomWindow : EditorWindow {
         }
     }
 
+
+
     private void SelectDuplicateGroup(Event current)
     {
         var x = (int)((current.mousePosition.x - graphPan.x) / gridSeparation);
@@ -888,6 +901,13 @@ public class CustomRoomWindow : EditorWindow {
             for(int i = 0 ; i< duplicateObstacleGroup.Count; i++)
             {
                 DrawObstacleSelectionPreview(duplicateObstacleGroup[i].gridX + x - minX, duplicateObstacleGroup[i].gridY + y - minY);
+            }
+        }
+        if (eventLayer)
+        {
+            for (int i = 0; i < duplicateTriggerGroup.Count; i++)
+            {
+                DrawObstacleSelectionPreview(duplicateTriggerGroup[i].gridX + x - minX, duplicateTriggerGroup[i].gridY + y - minY);
             }
         }
     }
@@ -1054,13 +1074,13 @@ public class CustomRoomWindow : EditorWindow {
         foreach (var tr in triggerNodes)
         {
 
-            CreatePrefab(goParent, tr, triggerModules);
+            CreatePrefab(goParent, tr, triggerModules, moduleSize.y);
         }
     }
 
-    private void CreatePrefab(GameObject goParent, GridNode node, List<ModuleNode> list)
+    private void CreatePrefab(GameObject goParent, GridNode node, List<ModuleNode> list, float height=0)
     {
-        var pos = new Vector3(-node.gridX * moduleSize.x, 0f, node.gridY * moduleSize.y);
+        var pos = new Vector3(-node.gridX * moduleSize.x, height, node.gridY * moduleSize.y);
         var pf = PrefabUtility.InstantiatePrefab(list[node.id].prefab);
         var go = ((GameObject)pf);
         go.transform.position = pos;
