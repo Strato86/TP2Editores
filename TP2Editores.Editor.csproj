@@ -306,6 +306,8 @@
     <Compile Include="Assets\Scripts\Editor\CROpener.cs" />
     <Compile Include="Assets\Scripts\Editor\CustomRoomWindow.cs" />
     <Compile Include="Assets\Scripts\Editor\EventManagerEditor.cs" />
+    <Compile Include="Assets\Scripts\Editor\RoomData.cs" />
+    <Compile Include="Assets\Scripts\Editor\RoomDataUtility.cs" />
     <Compile Include="Assets\Scripts\Editor\TriggerEventsEditor.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

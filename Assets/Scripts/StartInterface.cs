@@ -71,7 +71,7 @@ public class StartInterface : EditorWindow
 
             if (GUILayout.Button("Event Manager", GUILayout.Height(40), GUILayout.Width(200)))
             {
-                EventManagerWindow.OpenWindow();
+    //            EventManagerWindow.OpenWindow();
             }
 
             GUILayout.BeginArea(new Rect(0, 160, 200, 40));
