@@ -48,10 +48,12 @@ public class CustomRoomWindow : EditorWindow {
     List<GridNode> floorNodes;
     GridNode pickedGridNode;
     List<GridNode> obstacleNodes;
-    List<GridNode> enemiesNodes;
+  //  List<GridNode> enemiesNodes;
     List<GridNode> triggerNodes;
     Vector2Int moduleSize;
     Vector2Int boardSize;
+
+    Dictionary<ModuleNode, List<GridNode>> enemiesPath = new Dictionary<ModuleNode, List<GridNode>>();
 
     Layers layer;
     bool floorlayer = true;
@@ -110,7 +112,7 @@ public class CustomRoomWindow : EditorWindow {
 
         w.floorNodes = new List<GridNode>();
         w.obstacleNodes = new List<GridNode>();
-        w.enemiesNodes = new List<GridNode>();
+        w.enemiesPath = new Dictionary<ModuleNode, List<GridNode>>();
         w.triggerNodes = new List<GridNode>();
         w.duplicateFloorGroup = new List<GridNode>();
         w.duplicateObstacleGroup = new List<GridNode>();
@@ -175,6 +177,7 @@ public class CustomRoomWindow : EditorWindow {
             Debug.Log("hay algo en la carpeta");
             var pf = new ModuleNode();
             pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+            w.enemiesPath[pf] = new List<GridNode>();
             w.enemiesModules.Add(pf);
         }
 
@@ -257,21 +260,28 @@ public class CustomRoomWindow : EditorWindow {
                 EditorGUI.DrawRect(r,c);
             }   
         }
-        /*if (eventLayer)
+        if (enemiesLayer)
         {
-            foreach (var tN in triggerNodes)
+            foreach (var eN in enemiesModules)
             {
-                tN.rect.width = gridSeparation;
-                tN.rect.height = gridSeparation;
-                tN.rect.x = tN.gridX * gridSeparation;
-                tN.rect.y = tN.gridY * gridSeparation;
-                tN.color = triggerNodes[tN.id].color;
-                EditorGUI.DrawRect(tN.rect, tN.color);
-                var c = defaultColor;
-                var r = new Rect(tN.rect.x + gridSeparation / 3, tN.rect.y + gridSeparation / 3, gridSeparation / 3, gridSeparation / 3);
-                EditorGUI.DrawRect(r, c);
+                for (int i = 0; i < enemiesPath[eN].Count; i++)
+                {
+                    GridNode point = enemiesPath[eN][i];
+                    point.rect.width = gridSeparation;
+                    point.rect.height = gridSeparation;
+                    point.rect.x = point.gridX * gridSeparation;
+                    point.rect.y = point.gridY * gridSeparation;
+                    //point.color = enemiesPath[eN].color;
+                    //EditorGUI.DrawRect(point.rect, point.color);
+                    GUI.color = point.color;
+                    var r = new Rect(point.rect.x , point.rect.y , gridSeparation , gridSeparation);
+                    GUI.color = defaultColor;
+                    GUI.Box(r, i.ToString());
+                    GUI.color = defaultColor;
+                    //EditorGUI.DrawRect(r, c);
+                } 
             }
-        }*/
+        }
 
         if (eventLayer)
         {
@@ -411,6 +421,14 @@ public class CustomRoomWindow : EditorWindow {
                     for (int i = 0; i < enemiesModules.Count; i++)
                     {
                         DrawPrefabModule(enemiesModules, i);
+
+                        foreach (var item in enemiesPath[enemiesModules[i]])
+                        {
+
+                        }
+
+
+
                     }
                     break;
                 case Layers.EventTriggers:
@@ -467,7 +485,7 @@ public class CustomRoomWindow : EditorWindow {
                         
                         rd.floorNodes = new List<GridNode>();
                         rd.obstacleNodes = new List<GridNode>();
-                        rd.enemiesNodes = new List<GridNode>();
+                        rd.enemiesPath = new Dictionary<ModuleNode, List<GridNode>>();
                         rd.triggerNodes = new List<GridNode>();
 
                         foreach(var fn in floorNodes)
@@ -482,11 +500,19 @@ public class CustomRoomWindow : EditorWindow {
                             var n = new GridNode(on.gridX * gridSeparation, on.gridY * gridSeparation ,gridSeparation,gridSeparation, on.color, on.id, on.gridX, on.gridY);
                             rd.obstacleNodes.Add(n);
                         }
-                        foreach (var on in enemiesNodes)
+                        
+                        foreach (var enemy in enemiesPath.Keys)
                         {
+                            List<GridNode> list = new List<GridNode>();
+                            foreach (var on in enemiesPath[enemy])
+                            {
+
+                                var n = new GridNode(on.gridX * gridSeparation, on.gridY * gridSeparation, gridSeparation, gridSeparation, on.color, on.id, on.gridX, on.gridY);
+                                list.Add(n);
+
+                            }
+                            rd.enemiesPath[enemy]= list;
                             //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
-                            var n = new GridNode(on.gridX * gridSeparation, on.gridY * gridSeparation, gridSeparation, gridSeparation, on.color, on.id, on.gridX, on.gridY);
-                            rd.enemiesNodes.Add(n);
                         }
                         foreach (var tn in triggerNodes)
                         {
@@ -539,30 +565,33 @@ public class CustomRoomWindow : EditorWindow {
                     {
                         floorNodes = new List<GridNode>();
                         obstacleNodes = new List<GridNode>();
-                        enemiesNodes = new List<GridNode>();
+                        enemiesPath = new Dictionary<ModuleNode, List<GridNode>>();
                         triggerNodes = new List<GridNode>();
 
                         foreach(var fn in rd.floorNodes)
                         {
-                            //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
                             var n = new GridNode(fn.gridX * gridSeparation, fn.gridY * gridSeparation ,gridSeparation,gridSeparation, fn.color, fn.id, fn.gridX, fn.gridY);
                             floorNodes.Add(n);
                         }
                         foreach(var on in rd.obstacleNodes)
                         {
-                            //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
                             var n = new GridNode(on.gridX * gridSeparation, on.gridY * gridSeparation ,gridSeparation,gridSeparation, on.color, on.id, on.gridX, on.gridY);
                             obstacleNodes.Add(n);
                         }
-                        foreach (var on in rd.enemiesNodes)
+                        foreach (var enemy in enemiesPath.Keys)
                         {
-                            //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
-                            var n = new GridNode(on.gridX * gridSeparation, on.gridY * gridSeparation, gridSeparation, gridSeparation, on.color, on.id, on.gridX, on.gridY);
-                            enemiesNodes.Add(n);
+                            List<GridNode> list = new List<GridNode>();
+                            foreach (var on in enemiesPath[enemy])
+                            {
+
+                                var n = new GridNode(on.gridX * gridSeparation, on.gridY * gridSeparation, gridSeparation, gridSeparation, on.color, on.id, on.gridX, on.gridY);
+                                list.Add(n);
+
+                            }
+                            rd.enemiesPath[enemy] = list;
                         }
-                        foreach (var tn in rd.triggerNodes)
+                            foreach (var tn in rd.triggerNodes)
                         {
-                            //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
                             var n = new GridNode(tn.gridX * gridSeparation, tn.gridY * gridSeparation ,gridSeparation,gridSeparation, tn.color, tn.id, tn.gridX, tn.gridY);
                             triggerNodes.Add(n);
                         }
@@ -597,7 +626,7 @@ public class CustomRoomWindow : EditorWindow {
         {
             floorNodes = new List<GridNode>();
             obstacleNodes = new List<GridNode>();
-            enemiesNodes = new List<GridNode>();
+            enemiesPath = new Dictionary<ModuleNode, List<GridNode>>();
             triggerNodes = new List<GridNode>();
             groupName = "";
         }
@@ -744,7 +773,12 @@ public class CustomRoomWindow : EditorWindow {
                 break;
 
             case Layers.Enemies:
-                PaintSquareScreen(x, y, enemiesNodes);
+                foreach (var enemy in enemiesPath.Keys)
+                {
+                    if (pickedGridNode.id == enemy.id) {
+                        PaintSquareScreen(x, y, enemiesPath[enemy]);
+                    }
+                }
                 break;
 
             case Layers.EventTriggers:
@@ -820,7 +854,8 @@ public class CustomRoomWindow : EditorWindow {
             }
             if (enemiesLayer)
             {
-                SelectMovingGroup(enemiesNodes, duplicateEnemiesGroup);
+                // TODO hacer que se mueva
+                //SelectMovingGroup(enemiesNodes, duplicateEnemiesGroup);
             }
             if (eventLayer) {
                 SelectMovingGroup(triggerNodes, duplicateTriggerGroup);
@@ -838,7 +873,8 @@ public class CustomRoomWindow : EditorWindow {
 
         if (enemiesLayer)
         {
-            MoveGroup(enemiesNodes, duplicateEnemiesGroup, x, y, minX, minY);
+            // TODO hacer que se mueva
+            //MoveGroup(enemiesNodes, duplicateEnemiesGroup, x, y, minX, minY);
         }
 
         if (eventLayer)
@@ -1008,8 +1044,8 @@ public class CustomRoomWindow : EditorWindow {
                         }
                     }
                 }
-
-                if (enemiesLayer)
+                //TODO arreglar
+            /*    if (enemiesLayer)
                 {
                     foreach (var on in enemiesNodes)
                     {
@@ -1019,7 +1055,7 @@ public class CustomRoomWindow : EditorWindow {
                         }
                     }
                 }
-
+                */
                 if (eventLayer)
                 {
                     foreach (var tn in triggerNodes)
@@ -1146,13 +1182,13 @@ public class CustomRoomWindow : EditorWindow {
 
             CreatePrefab(goParent, oN, obstacleModules);
         }
-
-        foreach (var eN in enemiesNodes)
+        //TODO
+    /*    foreach (var eN in enemiesNodes)
         {
 
             CreatePrefab(goParent, eN, enemiesModules);
         }
-
+        */
         foreach (var tr in triggerNodes)
         {
 

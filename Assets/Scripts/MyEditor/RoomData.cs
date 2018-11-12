@@ -7,7 +7,7 @@ public class RoomData : ScriptableObject
     public string roomName;
     public List<GridNode> floorNodes;
     public List<GridNode> obstacleNodes;
-    public List<GridNode> enemiesNodes;
+    public Dictionary<ModuleNode, List<GridNode>> enemiesPath;
     public List<GridNode> triggerNodes;
 
 }
