@@ -414,6 +414,7 @@ public class CustomRoomWindow : EditorWindow {
                     for(int i = 0; i< obstacleModules.Count; i++)
                     {
                         DrawPrefabModule(obstacleModules, i);
+                        
                     }
                     break;
                 case Layers.Enemies:
@@ -421,14 +422,43 @@ public class CustomRoomWindow : EditorWindow {
                     for (int i = 0; i < enemiesModules.Count; i++)
                     {
                         DrawPrefabModule(enemiesModules, i);
+                            try
+                            {
+                                for (int x = 0; x < enemiesPath[enemiesModules[i]].Count; x++)
+                                {
+                                    EditorGUILayout.BeginHorizontal();
 
-                        foreach (var item in enemiesPath[enemiesModules[i]])
-                        {
-
-                        }
-
-
-
+                                    GUILayout.Label("Punto: " + x);
+                                    if (GUILayout.Button("Delete"))
+                                    {
+                                        enemiesPath[enemiesModules[i]].RemoveAt(x);
+                                        Repaint();
+                                        break;
+                                    }
+                                    if ( x< enemiesPath[enemiesModules[i]].Count -1 && GUILayout.Button("+") )
+                                    {
+                                        var point = enemiesPath[enemiesModules[i]][x];
+                                        enemiesPath[enemiesModules[i]].RemoveAt(x);
+                                        enemiesPath[enemiesModules[i]].Insert(x+1, point);
+                                        Repaint();
+                                        break;
+                                    }
+                                    if (x>0 &&GUILayout.Button("-") )
+                                    {
+                                        var point = enemiesPath[enemiesModules[i]][x];
+                                        enemiesPath[enemiesModules[i]].RemoveAt(x);
+                                        enemiesPath[enemiesModules[i]].Insert(x - 1, point);
+                                        Repaint();
+                                        break;
+                                    }
+                                    EditorGUILayout.EndHorizontal();
+                                    //Repaint();
+                                }
+                            } catch (Exception e)
+                            {
+                                //Debug.Log(e.Message);
+                            }
+                        
                     }
                     break;
                 case Layers.EventTriggers:
@@ -1182,13 +1212,25 @@ public class CustomRoomWindow : EditorWindow {
 
             CreatePrefab(goParent, oN, obstacleModules);
         }
-        //TODO
-    /*    foreach (var eN in enemiesNodes)
-        {
 
-            CreatePrefab(goParent, eN, enemiesModules);
+        foreach (var eN in enemiesPath)
+        {
+            if (eN.Value.Count == 0) continue;
+            GameObject enemy= CreatePrefab(goParent,eN.Value[0] , enemiesModules);
+            List<Vector3> posiciones= new List<Vector3>();
+          
+
+            if (enemy.GetComponent<FollowPath>() == null) continue;
+            foreach (var point in eN.Value)
+            {
+                var pos = new Vector3(-point.gridX * moduleSize.x, 0, point.gridY * moduleSize.y);
+                posiciones.Add(pos);
+            }
+            enemy.GetComponent<FollowPath>().Set(posiciones);
+            
+
         }
-        */
+        
         foreach (var tr in triggerNodes)
         {
 
@@ -1196,7 +1238,7 @@ public class CustomRoomWindow : EditorWindow {
         }
     }
 
-    private void CreatePrefab(GameObject goParent, GridNode node, List<ModuleNode> list, float height=0)
+    private GameObject CreatePrefab(GameObject goParent, GridNode node, List<ModuleNode> list, float height=0)
     {
         var pos = new Vector3(-node.gridX * moduleSize.x, height, node.gridY * moduleSize.y);
         var pf = PrefabUtility.InstantiatePrefab(list[node.id].prefab);
@@ -1204,6 +1246,7 @@ public class CustomRoomWindow : EditorWindow {
         go.transform.position = pos;
         go.transform.rotation = Quaternion.identity;
         go.transform.SetParent(goParent.transform);
+        return go;
     }
 
     private void DrawLine(Color col, bool bold = false, bool vertical = false)

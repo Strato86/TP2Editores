@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 4235038215153912}
   - component: {fileID: 33628465217193500}
   - component: {fileID: 23421162925344468}
+  - component: {fileID: 114038526976220240}
   m_Layer: 0
   m_Name: RABBIT
   m_TagString: Untagged
@@ -82,3 +83,18 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1632189569177846}
   m_Mesh: {fileID: 4300000, guid: 7a7eaef2c03fe2a4497f4122ae85ee43, type: 3}
+--- !u!114 &114038526976220240
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1632189569177846}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef39734f9686e9245bd04c476488f98a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  positions: []
+  index: 1
+  speed: 2
+  minDis: 0.5
