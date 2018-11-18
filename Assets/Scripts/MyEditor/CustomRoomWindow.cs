@@ -302,6 +302,7 @@ public class CustomRoomWindow : EditorWindow {
                 eN.color = enemiesNodes[eN.id].color;
                 EditorGUI.DrawRect(eN.rect, eN.color);
                 var c = enemiesNodes[eN.id].color;
+               // var c = Color.red;
                 c.a = 0.5f;
                 var r = new Rect(eN.rect.x , eN.rect.y, gridSeparation, gridSeparation );
                 EditorGUI.DrawRect(r, c);
@@ -467,6 +468,26 @@ foreach (var eN in enemiesModules)
                     for (int i = 0; i < enemiesModules.Count; i++)
                     {
                         DrawPrefabModule(enemiesModules, i);
+                        foreach (var enemy in enemiesNodes)
+                        {
+                            if (enemy.id== enemiesModules[i].id) {
+                                EditorGUILayout.LabelField("Enemigo");
+                                    foreach (var point in enemy.path)
+                                    {
+                                        EditorGUILayout.BeginHorizontal();
+
+                                        EditorGUILayout.LabelField("layer");
+                                        EditorGUILayout.LabelField(point.ToString());
+                                        EditorGUILayout.EndHorizontal();
+
+                                    }
+                                    EditorGUILayout.BeginHorizontal();
+
+                                    EditorGUILayout.LabelField("Add layer");
+                                  //  var index = EditorGUILayout.Popup(index, options);
+                                    EditorGUILayout.EndHorizontal();
+                                }
+                        }
                        // DrawPath(i);
 
                     }
