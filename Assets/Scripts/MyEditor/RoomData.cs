@@ -10,4 +10,5 @@ public class RoomData : ScriptableObject
     public Dictionary<ModuleNode, List<GridNode>> enemiesPath;
     public List<GridNode> triggerNodes;
     public List<GridNode> waypointNodes;
+    public List<GridEnemy> enemiesNodes;
 }
