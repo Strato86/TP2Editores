@@ -956,7 +956,7 @@ public class CustomRoomWindow : EditorWindow {
             }
             Repaint();
         }
-        else if (id <= 0 && layer== Layers.Waypoint)
+        else if (id <= 0 && layer== Layers.Waypoint && selectedTool == Tools.Brush)
         {
             if (!isOcupied)
             {
