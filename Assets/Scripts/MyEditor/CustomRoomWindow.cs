@@ -9,6 +9,8 @@ public class CustomRoomWindow : EditorWindow {
 
     List<ModuleNode> floorModules;
     List<ModuleNode> obstacleModules;
+    List<ModuleNode> enemiesModules;
+    List<ModuleNode> waypointModules;
     List<ModuleNode> triggerModules;
 
     string[] _roomsToLoad;
@@ -47,14 +49,19 @@ public class CustomRoomWindow : EditorWindow {
     List<GridNode> floorNodes;
     GridNode pickedGridNode;
     List<GridNode> obstacleNodes;
+    List<GridNode> waypointNodes;
+    List<GridEnemy> enemiesNodes;
     List<GridNode> triggerNodes;
     Vector2Int moduleSize;
     Vector2Int boardSize;
+
+    //Dictionary<ModuleNode, List<GridNode>> enemiesPath = new Dictionary<ModuleNode, List<GridNode>>();
 
     Layers layer;
     bool floorlayer = true;
     bool obstaclesLayer;
     bool enemiesLayer;
+    bool waypointLayer;
     bool eventLayer;
 
     Tools selectedTool;
@@ -64,6 +71,8 @@ public class CustomRoomWindow : EditorWindow {
     List<GridNode> duplicateFloorGroup;
     List<GridNode> duplicateObstacleGroup;
     List<GridNode> duplicateTriggerGroup;
+    List<GridNode> duplicateWaypointGroup;
+    List<GridEnemy> duplicateEnemiesGroup;
     Vector2 firstSelection;
     Vector2 lastSelection;
 
@@ -72,7 +81,7 @@ public class CustomRoomWindow : EditorWindow {
     string floorFolder = "Floor prefabs";
     string obstaclesFolder = "Obstacle prefabs";
     string triggerFolder = "Trigger Prefabs";
-
+    string enemiesFolder = "Enemies Prefabs";
     string dataFolder = "SavedRoom";
 
     Editor _prev;
@@ -84,12 +93,17 @@ public class CustomRoomWindow : EditorWindow {
     string saveName = "";
     string loadName = "";
 
+    bool resetRoom;
+    int resetRoomSpace = 250;
+    bool firstTime;
 
     public static void OpenWindow(int amount, Vector2Int moduleSize, Vector2Int boardSize)
     {
         var w = (CustomRoomWindow)GetWindow(typeof(CustomRoomWindow));
         w.floorModules = new List<ModuleNode>();
         w.obstacleModules = new List<ModuleNode>();
+        w.enemiesModules = new List<ModuleNode>();
+        w.waypointModules = new List<ModuleNode>();
         w.triggerModules = new List<ModuleNode>();
 
         w.graphPan = new Vector2(w.toolBarWidth + w.rulerBorder, w.smallBorder + w.rulerBorder);
@@ -106,10 +120,14 @@ public class CustomRoomWindow : EditorWindow {
 
         w.floorNodes = new List<GridNode>();
         w.obstacleNodes = new List<GridNode>();
+        w.enemiesNodes = new List<GridEnemy>();
         w.triggerNodes = new List<GridNode>();
+        w.waypointNodes = new List<GridNode>();
         w.duplicateFloorGroup = new List<GridNode>();
         w.duplicateObstacleGroup = new List<GridNode>();
+        w.duplicateEnemiesGroup = new List<GridEnemy>();
         w.duplicateTriggerGroup = new List<GridNode>();
+        w.duplicateWaypointGroup = new List<GridNode>();
 
         if (!AssetDatabase.IsValidFolder("Assets/LevelDesign"))
         {
@@ -123,6 +141,12 @@ public class CustomRoomWindow : EditorWindow {
         {
             AssetDatabase.CreateFolder("Assets/LevelDesign", w.obstaclesFolder);
         }
+
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.enemiesFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.enemiesFolder);
+        }
+
         if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.dataFolder))
         {
             AssetDatabase.CreateFolder("Assets/LevelDesign", w.dataFolder);
@@ -153,6 +177,21 @@ public class CustomRoomWindow : EditorWindow {
             w.obstacleModules.Add(pf);
         }
 
+        folders[0] = "Assets/LevelDesign/" + w.enemiesFolder;
+        Debug.Log("busco en la carpeta" + folders[0]);
+        paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+            Debug.Log("hay algo en la carpeta");
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+         //   w.enemiesPath[pf] = new List<GridNode>();
+            w.enemiesModules.Add(pf);
+        }
+
+
         folders[0] = "Assets/LevelDesign/" + w.triggerFolder;
         Debug.Log("busco en la carpeta" + folders[0]);
         paths = AssetDatabase.FindAssets("t: Object", folders);
@@ -181,6 +220,151 @@ public class CustomRoomWindow : EditorWindow {
         w.minSize = new Vector2(500,350);
     }
 
+    public static void OpenWindow(int amount, Vector2Int moduleSize, Vector2Int boardSize, RoomData loadedRD)
+    {
+        var w = (CustomRoomWindow)GetWindow(typeof(CustomRoomWindow));
+        w.floorModules = new List<ModuleNode>();
+        w.obstacleModules = new List<ModuleNode>();
+        w.enemiesModules = new List<ModuleNode>();
+        w.waypointModules = new List<ModuleNode>();
+        w.triggerModules = new List<ModuleNode>();
+
+        w.graphPan = new Vector2(w.toolBarWidth + w.rulerBorder, w.smallBorder + w.rulerBorder);
+        w.initialGraphPan = w.graphPan;
+        w.roomGraph = new Rect(w.toolBarWidth + w.rulerBorder, w.smallBorder + w.rulerBorder, 1000000, 1000000);
+
+        if (boardSize == Vector2Int.zero)
+        {
+            boardSize = new Vector2Int(80, 50);
+        }
+        w.moduleSize = moduleSize;
+        w.boardSize = boardSize;
+        w.pickedGridNode = new GridNode();
+
+        w.floorNodes = new List<GridNode>();
+        w.obstacleNodes = new List<GridNode>();
+        w.enemiesNodes = new List<GridEnemy>();
+        w.triggerNodes = new List<GridNode>();
+        w.waypointNodes = new List<GridNode>();
+        w.duplicateFloorGroup = new List<GridNode>();
+        w.duplicateObstacleGroup = new List<GridNode>();
+        w.duplicateEnemiesGroup = new List<GridEnemy>();
+        w.duplicateTriggerGroup = new List<GridNode>();
+        w.duplicateWaypointGroup = new List<GridNode>();
+
+        foreach(var fn in loadedRD.floorNodes)
+        {
+            w.floorNodes.Add(fn);
+        }
+        foreach(var on in loadedRD.obstacleNodes)
+        {
+            w.obstacleNodes.Add(on);
+        }
+        foreach(var eN in loadedRD.enemiesNodes)
+        {
+            w.enemiesNodes.Add(eN);
+        }
+        foreach(var tN in loadedRD.triggerNodes)
+        {
+            w.triggerNodes.Add(tN);
+        }
+        foreach(var wN in loadedRD.waypointNodes)
+        {
+            w.waypointNodes.Add(wN);
+        }
+
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign"))
+        {
+            AssetDatabase.CreateFolder("Assets", "LevelDesign");
+        }
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.floorFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.floorFolder);
+        }
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.obstaclesFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.obstaclesFolder);
+        }
+
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.enemiesFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.enemiesFolder);
+        }
+
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.dataFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.dataFolder);
+        }
+        string[] folders = new string[1];
+        folders[0] = "Assets/LevelDesign/" + w.floorFolder;
+        var paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+            w.floorModules.Add(pf);
+        }
+
+        folders[0] = "Assets/LevelDesign/" + w.obstaclesFolder;
+        Debug.Log("busco en la carpeta" + folders[0]);
+        paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+            Debug.Log("hay algo en la carpeta");
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+            w.obstacleModules.Add(pf);
+        }
+
+        folders[0] = "Assets/LevelDesign/" + w.enemiesFolder;
+        Debug.Log("busco en la carpeta" + folders[0]);
+        paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+            Debug.Log("hay algo en la carpeta");
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+         //   w.enemiesPath[pf] = new List<GridNode>();
+            w.enemiesModules.Add(pf);
+        }
+
+
+        folders[0] = "Assets/LevelDesign/" + w.triggerFolder;
+        Debug.Log("busco en la carpeta" + folders[0]);
+        paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+            Debug.Log("hay algo en la carpeta");
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+            w.triggerModules.Add(pf);
+        }
+
+        folders[0] = "Assets/LevelDesign/" + w.dataFolder;
+        paths = AssetDatabase.FindAssets("t: ScriptableObject", folders);
+        
+        w._roomsToLoad = new string[paths.Length];
+        for(int i = 0; i< paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+            var splitedPath = paths[i].Split('/');
+            paths[i] = splitedPath[splitedPath.Length - 1];
+            var withoutExtension = paths[i].Split('.');
+            w._roomsToLoad[i] = withoutExtension[0];
+        }
+        w.minSize = new Vector2(500,350);
+        w.firstTime = true;
+    }
+
     private void OnGUI()
     {
         defaultColor = GUI.color;
@@ -192,7 +376,6 @@ public class CustomRoomWindow : EditorWindow {
         
 
         GUI.BeginGroup(roomGraph);
-
         BeginWindows();
         //Board Nodes
         var otherLayersActivacted = obstaclesLayer || enemiesLayer || eventLayer;
@@ -231,21 +414,69 @@ public class CustomRoomWindow : EditorWindow {
                 EditorGUI.DrawRect(r,c);
             }   
         }
-        if (eventLayer)
+        if (waypointLayer)
         {
-            foreach (var tN in triggerNodes)
+            for (int i = 0; i < waypointNodes.Count; i++)
             {
-                tN.rect.width = gridSeparation;
-                tN.rect.height = gridSeparation;
-                tN.rect.x = tN.gridX * gridSeparation;
-                tN.rect.y = tN.gridY * gridSeparation;
-                tN.color = triggerNodes[tN.id].color;
-                EditorGUI.DrawRect(tN.rect, tN.color);
-                var c = defaultColor;
-                var r = new Rect(tN.rect.x + gridSeparation / 3, tN.rect.y + gridSeparation / 3, gridSeparation / 3, gridSeparation / 3);
-                EditorGUI.DrawRect(r, c);
+                GridNode point = waypointNodes[i];
+                point.rect.width = gridSeparation;
+                point.rect.height = gridSeparation;
+                point.rect.x = point.gridX * gridSeparation;
+                point.rect.y = point.gridY * gridSeparation;
+                //point.color = enemiesPath[eN].color;
+                //EditorGUI.DrawRect(point.rect, point.color);
+                GUI.color = point.color;
+                var r = new Rect(point.rect.x, point.rect.y, gridSeparation, gridSeparation);
+                GUI.color = defaultColor;
+                GUI.Box(r, i.ToString());
+                GUI.color = defaultColor;
+                //EditorGUI.DrawRect(r, c);
             }
         }
+        
+        if (enemiesLayer)
+        {
+            for (int i = 0; i < enemiesNodes.Count; i++)
+            {
+                var eN = enemiesNodes[i];
+                eN.rect.width = gridSeparation;
+                eN.rect.height = gridSeparation;
+                eN.rect.x = eN.gridX * gridSeparation;
+                eN.rect.y = eN.gridY * gridSeparation;
+                eN.color = enemiesModules[eN.id].color;
+                EditorGUI.DrawRect(eN.rect, eN.color);
+                var c = enemiesNodes[eN.id].color;
+                Debug.Log(c);
+               // var c = Color.red;
+                c.a = c.a/2;
+                var r = new Rect(eN.rect.x , eN.rect.y, gridSeparation, gridSeparation );
+                GUI.color = c;
+                GUI.Box(r, i.ToString());
+                GUI.color = defaultColor;
+            //    EditorGUI.DrawRect(r, c);
+          //      countEnemy++;
+            }
+        }
+        /*
+foreach (var eN in enemiesModules)
+          {
+              for (int i = 0; i < enemiesPath[eN].Count; i++)
+              {
+                  GridNode point = enemiesPath[eN][i];
+                  point.rect.width = gridSeparation;
+                  point.rect.height = gridSeparation;
+                  point.rect.x = point.gridX * gridSeparation;
+                  point.rect.y = point.gridY * gridSeparation;
+                  //point.color = enemiesPath[eN].color;
+                  //EditorGUI.DrawRect(point.rect, point.color);
+                  GUI.color = point.color;
+                  var r = new Rect(point.rect.x , point.rect.y , gridSeparation , gridSeparation);
+                  GUI.color = defaultColor;
+                  GUI.Box(r, i.ToString());
+                  GUI.color = defaultColor;
+                  //EditorGUI.DrawRect(r, c);
+              } 
+          }*/
 
         if (eventLayer)
         {
@@ -255,7 +486,7 @@ public class CustomRoomWindow : EditorWindow {
                 tN.rect.height = gridSeparation;
                 tN.rect.x = tN.gridX * gridSeparation;
                 tN.rect.y = tN.gridY * gridSeparation;
-                tN.color = triggerNodes[tN.id].color;
+                tN.color = triggerModules[tN.id].color;
                 EditorGUI.DrawRect(tN.rect, tN.color);
                 var c = defaultColor;
                 var r = new Rect(tN.rect.x + gridSeparation / 3, tN.rect.y + gridSeparation / 3, gridSeparation / 3, gridSeparation / 3);
@@ -359,7 +590,7 @@ public class CustomRoomWindow : EditorWindow {
         layer = (Layers)EditorGUILayout.EnumPopup(layer,GUILayout.Width(100));
         EditorGUILayout.EndHorizontal();
 
-        scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250), GUILayout.Height(Mathf.Max(40,(position.height - bottomBarheight - 250))));
+        scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250), GUILayout.Height(Mathf.Max(40,(position.height - bottomBarheight - resetRoomSpace))));
         //Prefabs
         switch(selectedTool)
         {
@@ -368,31 +599,165 @@ public class CustomRoomWindow : EditorWindow {
             {
                 case Layers.Floor:
                     if(pickedGridNode.id >= floorModules.Count) pickedGridNode.id = floorModules.Count - 1;
-                        for (int i = 0; i < floorModules.Count; i++)
-                        {
-                            DrawPrefabModule(floorModules, i);
-                        }
-
-
-                        break;
+                    for (int i = 0; i < floorModules.Count; i++)
+                    {
+                        DrawPrefabModule(floorModules, i);
+                    }
+                    if(firstTime)
+                    {
+                        layer = Layers.Obstacles;
+                    }
+                    break;
                 case Layers.Obstacles:
                     if(pickedGridNode.id >= obstacleModules.Count) pickedGridNode.id = obstacleModules.Count - 1;
-                        for(int i = 0; i< obstacleModules.Count; i++)
-                        {
-                            DrawPrefabModule(obstacleModules, i);
-                        }
-                        break;
-                case Layers.EventTriggers:
+                    for(int i = 0; i< obstacleModules.Count; i++)
+                    {
+                        DrawPrefabModule(obstacleModules, i);
+                    }
+                    if(firstTime)
+                    {
+                        layer = Layers.Enemies;
+                    }
+                    break;
+                case Layers.Enemies:
+                    if (pickedGridNode.id >= enemiesModules.Count) pickedGridNode.id = obstacleModules.Count - 1;
 
-                        DrawPrefabModuleFromList(triggerModules);
-                        foreach (var item in triggerModules)
+                        List<string> aux = new List<string>();
+
+
+                        for (int i = 0; i < waypointNodes.Count; i++)
                         {
-                            if (item.prefab.GetComponent<TriggerEvent>() == null) {
-                                EditorGUILayout.HelpBox("Alguno de los objectos en Trigger prefab no tiene un trigger event",MessageType.Warning);
+                            aux.Add(i.ToString());
+                        }
+
+                    for (int i = 0; i < enemiesModules.Count; i++)
+                    {
+                        DrawPrefabModule(enemiesModules, i);
+                          var enemyindex = 0;
+                        foreach (var enemy in enemiesNodes)
+                        {
+                            if (enemy.id== enemiesModules[i].id) {
+                                    var count = 0;
+                                EditorGUILayout.LabelField("Enemigo "+enemyindex.ToString());
+                                foreach (var point in enemy.path)
+                                {
+                                    EditorGUILayout.BeginHorizontal();
+
+                                    EditorGUILayout.LabelField("Point "+ count + ": "  +point.ToString());
+
+                                    if (GUILayout.Button("Delete"))
+                                      {
+                                          enemy.path.RemoveAt(count);
+                                          Repaint();
+                                          break;
+                                      }
+                                    if (count < enemy.path.Count - 1 && GUILayout.Button("+"))
+                                    {
+                                        var pointaux = enemy.path[count];
+                                        enemy.path.RemoveAt(count);
+                                        enemy.path.Insert(count + 1, pointaux);
+                                        Repaint();
+                                        break;
+                                    }
+                                    if (count > 0 && GUILayout.Button("-"))
+                                    {
+                                        var pointaux = enemy.path[count];
+                                        enemy.path.RemoveAt(count);
+                                        enemy.path.Insert(count - 1, pointaux);
+                                        Repaint();
+                                        break;
+                                    }
+
+                                      EditorGUILayout.EndHorizontal();
+                                    count++;
+
+                                }
+                                EditorGUILayout.BeginHorizontal();
+                                EditorGUILayout.LabelField("New point");
+                                enemy.index = EditorGUILayout.Popup(enemy.index, aux.ToArray());
+                                if (GUILayout.Button("Add"))
+                                {
+                                    enemy.path.Add(enemy.index);
+                                    Repaint();
+                                    break;
+                                }
+                                   // EditorGUILayout.LabelField("Add layer");
+                                  //  var index = EditorGUILayout.Popup(index, options);
+                                    EditorGUILayout.EndHorizontal();
+                             }
+                            enemyindex++;
+                        }
+                       // DrawPath(i);
+
+                    }
+                    if(firstTime)
+                    {
+                        layer = Layers.Waypoint;
+                    }
+                    break;
+                case Layers.Waypoint:
+                    try
+                    {
+                        for (int x = 0; x < waypointNodes.Count; x++)
+                        {
+                            EditorGUILayout.BeginHorizontal();
+
+                            GUILayout.Label("Punto: " + x);
+                          /*  if (GUILayout.Button("Delete"))
+                            {
+                                waypointNodes.RemoveAt(x);
+                                Repaint();
+                                break;
+                            }*/
+                            if (x < waypointNodes.Count - 1 && GUILayout.Button("+"))
+                            {
+                                var point = waypointNodes[x];
+                                waypointNodes.RemoveAt(x);
+                                waypointNodes.Insert(x + 1, point);
+                                Repaint();
                                 break;
                             }
+                            if (x > 0 && GUILayout.Button("-"))
+                            {
+                                var point = waypointNodes[x];
+                                waypointNodes.RemoveAt(x);
+                                waypointNodes.Insert(x - 1, point);
+                                Repaint();
+                                break;
+                            }
+                            EditorGUILayout.EndHorizontal();
+                            //Repaint();
                         }
-                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        //Debug.Log(e.Message);
+                    }
+                    if(firstTime)
+                    {
+                        layer = Layers.EventTriggers;
+                    }
+                    break;
+                case Layers.EventTriggers:
+                    if (pickedGridNode.id >=triggerModules.Count) pickedGridNode.id = triggerModules.Count - 1;
+                    for (int i = 0; i < triggerModules.Count; i++)
+                    {
+                        DrawPrefabModule(triggerModules, i);
+                    }
+                        //   DrawPrefabModuleFromList(triggerModules);
+                    foreach (var item in triggerModules)
+                    {
+                        if (item.prefab.GetComponent<TriggerEvent>() == null) {
+                            EditorGUILayout.HelpBox("Alguno de los objectos en Trigger prefab no tiene un trigger event",MessageType.Warning);
+                            break;
+                        }
+                    }
+                    if(firstTime)
+                    {
+                        layer = Layers.Floor;
+                        firstTime = false;
+                    }
+                    break;
                 }
                 break;
             
@@ -432,6 +797,9 @@ public class CustomRoomWindow : EditorWindow {
                         
                         rd.floorNodes = new List<GridNode>();
                         rd.obstacleNodes = new List<GridNode>();
+                        // rd.enemiesPath = new Dictionary<ModuleNode, List<GridNode>>();
+                        rd.enemiesNodes = new List<GridEnemy>();
+                        rd.waypointNodes = new List<GridNode>();
                         rd.triggerNodes = new List<GridNode>();
 
                         foreach(var fn in floorNodes)
@@ -446,12 +814,42 @@ public class CustomRoomWindow : EditorWindow {
                             var n = new GridNode(on.gridX * gridSeparation, on.gridY * gridSeparation ,gridSeparation,gridSeparation, on.color, on.id, on.gridX, on.gridY);
                             rd.obstacleNodes.Add(n);
                         }
-                        foreach(var tn in triggerNodes)
+
+                        foreach (var on in enemiesNodes)
+                        {
+                            //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
+                            var n = new GridEnemy(on.gridX * gridSeparation, on.gridY * gridSeparation, gridSeparation, gridSeparation, on.color, on.id, on.gridX, on.gridY);
+                            rd.enemiesNodes.Add(n);
+                        }
+                        /*
+                        foreach (var enemy in enemiesPath.Keys)
+                        {
+                            List<GridNode> list = new List<GridNode>();
+                            foreach (var on in enemiesPath[enemy])
+                            {
+
+                                var n = new GridNode(on.gridX * gridSeparation, on.gridY * gridSeparation, gridSeparation, gridSeparation, on.color, on.id, on.gridX, on.gridY);
+                                list.Add(n);
+
+                            }
+                            rd.enemiesPath[enemy]= list;
+                            //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
+                        }*/
+
+                        foreach (var wn in waypointNodes)
+                        {
+                            //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
+                            var n = new GridNode(wn.gridX * gridSeparation, wn.gridY * gridSeparation, gridSeparation, gridSeparation, wn.color, wn.id, wn.gridX, wn.gridY);
+                            rd.waypointNodes.Add(n);
+                        }
+
+                        foreach (var tn in triggerNodes)
                         {
                             //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
                             var n = new GridNode(tn.gridX * gridSeparation, tn.gridY * gridSeparation ,gridSeparation,gridSeparation, tn.color, tn.id, tn.gridX, tn.gridY);
                             rd.triggerNodes.Add(n);
                         }
+
                         rd.roomName = groupName;
                         RoomDataUtility.SaveRoom(saveName, rd);
 
@@ -480,7 +878,7 @@ public class CustomRoomWindow : EditorWindow {
 
                 DrawLine(Color.grey);
 
-                myS.fontSize = 18;
+                /*myS.fontSize = 18;
                 myS.fontStyle = FontStyle.Bold;
                 EditorGUILayout.LabelField("Load Room", myS);
 
@@ -497,25 +895,40 @@ public class CustomRoomWindow : EditorWindow {
                     {
                         floorNodes = new List<GridNode>();
                         obstacleNodes = new List<GridNode>();
+                        enemiesNodes = new List<GridEnemy>();
                         triggerNodes = new List<GridNode>();
+                        waypointNodes = new List<GridNode>();
 
-                        foreach(var fn in rd.floorNodes)
+                        foreach (var fn in rd.floorNodes)
                         {
-                            //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
                             var n = new GridNode(fn.gridX * gridSeparation, fn.gridY * gridSeparation ,gridSeparation,gridSeparation, fn.color, fn.id, fn.gridX, fn.gridY);
                             floorNodes.Add(n);
                         }
+
                         foreach(var on in rd.obstacleNodes)
                         {
-                            //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
                             var n = new GridNode(on.gridX * gridSeparation, on.gridY * gridSeparation ,gridSeparation,gridSeparation, on.color, on.id, on.gridX, on.gridY);
                             obstacleNodes.Add(n);
                         }
-                        foreach(var tn in rd.triggerNodes)
+
+                        foreach (var on in rd.enemiesNodes)
                         {
-                            //float x, float y, float width, float heigth, Color col, int id, int gX, int gY
+                            var n = new GridEnemy(on.gridX * gridSeparation, on.gridY * gridSeparation, gridSeparation, gridSeparation, on.color, on.id, on.gridX, on.gridY);
+                            enemiesNodes.Add(n);
+                        }
+
+
+
+                        foreach (var tn in rd.triggerNodes)
+                        {
                             var n = new GridNode(tn.gridX * gridSeparation, tn.gridY * gridSeparation ,gridSeparation,gridSeparation, tn.color, tn.id, tn.gridX, tn.gridY);
                             triggerNodes.Add(n);
+                        }
+
+                        foreach (var wn in rd.waypointNodes)
+                        {
+                            var n = new GridNode(wn.gridX * gridSeparation, wn.gridY * gridSeparation, gridSeparation, gridSeparation, wn.color, wn.id, wn.gridX, wn.gridY);
+                            waypointNodes.Add(n);
                         }
 
                         groupName = rd.roomName;
@@ -538,18 +951,38 @@ public class CustomRoomWindow : EditorWindow {
                     
                     EditorGUILayout.LabelField(_roomsToLoad[i], myS);
                 }
-                EditorGUILayout.EndScrollView();
+                EditorGUILayout.EndScrollView();*/
                 break;
         }
         
-        EditorGUILayout.EndScrollView();
-
-        if (GUILayout.Button("Reset Room"))
+        EditorGUILayout.EndScrollView();     
+        if (resetRoom)
+        { 
+            DrawLine(Color.gray, false, false);
+            EditorGUILayout.LabelField("Are you sure?", EditorStyles.boldLabel);
+            resetRoomSpace = 320;
+            if(GUILayout.Button("Yes"))
+            {
+                floorNodes = new List<GridNode>();
+                obstacleNodes = new List<GridNode>();
+                enemiesNodes = new List<GridEnemy>();
+                // enemiesPath = new Dictionary<ModuleNode, List<GridNode>>();
+                triggerNodes = new List<GridNode>();
+                waypointNodes = new List<GridNode>();
+                groupName = "";
+                resetRoom = false;
+                resetRoomSpace = 250;
+            }
+            if(GUILayout.Button("No"))
+            {
+                resetRoom = false;
+                resetRoomSpace = 250;
+            }
+            DrawLine(Color.gray, false, false);
+            Repaint();
+        }else
         {
-            floorNodes = new List<GridNode>();
-            obstacleNodes = new List<GridNode>();
-            triggerNodes = new List<GridNode>();
-            groupName = "";
+            resetRoom = GUILayout.Button("Reset Room");
         }
         if (GUILayout.Button("Create Room"))
         {
@@ -576,22 +1009,54 @@ public class CustomRoomWindow : EditorWindow {
         floorlayer = EditorGUILayout.Toggle("Floor", floorlayer);
         obstaclesLayer = EditorGUILayout.Toggle("Obstacles", obstaclesLayer);
         enemiesLayer = EditorGUILayout.Toggle("Enemies", enemiesLayer);
+        waypointLayer = EditorGUILayout.Toggle("Waypoint", waypointLayer);
         eventLayer = EditorGUILayout.Toggle("Event Trigger", eventLayer);
     
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.EndVertical();
     }
 
-    private void DrawPrefabModuleFromList(List<ModuleNode> list)
+    private void DrawPath(int i)
     {
-        if (pickedGridNode.id >= list.Count) pickedGridNode.id = list.Count - 1;
-
-        for (int i = 0; i < list.Count; i++)
+       /* try
         {
-            DrawPrefabModule(list, i);
-        }
-    }
+            for (int x = 0; x < enemiesPath[enemiesModules[i]].Count; x++)
+            {
+                EditorGUILayout.BeginHorizontal();
 
+                GUILayout.Label("Punto: " + x);
+                if (GUILayout.Button("Delete"))
+                {
+                    enemiesPath[enemiesModules[i]].RemoveAt(x);
+                    Repaint();
+                    break;
+                }
+                if (x < enemiesPath[enemiesModules[i]].Count - 1 && GUILayout.Button("+"))
+                {
+                    var point = enemiesPath[enemiesModules[i]][x];
+
+                    enemiesPath[enemiesModules[i]].RemoveAt(x);
+                    enemiesPath[enemiesModules[i]].Insert(x + 1, point);
+                    Repaint();
+                    break;
+                }
+                if (x > 0 && GUILayout.Button("-"))
+                {
+                    var point = enemiesPath[enemiesModules[i]][x];
+                    enemiesPath[enemiesModules[i]].RemoveAt(x);
+                    enemiesPath[enemiesModules[i]].Insert(x - 1, point);
+                    Repaint();
+                    break;
+                }
+                EditorGUILayout.EndHorizontal();
+                //Repaint();
+            }
+        }
+        catch (Exception e)
+        {
+            //Debug.Log(e.Message);
+        }*/
+    }
 
     private void DrawPrefabModule(List<ModuleNode> list, int i)
     {
@@ -703,13 +1168,80 @@ public class CustomRoomWindow : EditorWindow {
                 PaintSquareScreen(x, y, obstacleNodes);
                 break;
 
+            case Layers.Enemies:
+                PaintSquareScreen(x, y, enemiesNodes);
+                break;
+
+        /*        foreach (var enemy in enemiesPath.Keys)
+                {
+                    if (pickedGridNode.id == enemy.id) {
+                        PaintSquareScreen(x, y, enemiesPath[enemy]);
+                    }
+                }
+                break;*/
+
+            case Layers.Waypoint:
+                PaintSquareScreen(x, y, waypointNodes);
+                break;
+
             case Layers.EventTriggers:
                 PaintSquareScreen(x, y, triggerNodes);
                 break;
         }
-        
+    }
 
-        
+    private void PaintSquareScreen(int x, int y, List<GridEnemy> gridList)
+    {
+
+        GridNode auxNode = new GridNode();
+
+        bool isOcupied = false;
+        var id = pickedGridNode.id;
+        foreach (var g in gridList)
+        {
+            if (!isOcupied)
+            {
+                isOcupied = (g.gridX == x && g.gridY == y);
+                auxNode = g;
+            }
+        }
+        if (id < 0 && isOcupied)
+        {
+            for (var i = gridList.Count - 1; i >= 0; i--)
+            {
+                if (gridList[i].gridX == x && gridList[i].gridY == y)
+                {
+                    gridList.RemoveAt(i);
+                    Repaint();
+                }
+            }
+        }
+        else if (id >= 0)
+        {
+            if (!isOcupied)
+            {
+                var g = new GridEnemy(x * gridSeparation, y * gridSeparation, gridSeparation, gridSeparation, pickedGridNode.color, pickedGridNode.id, x, y);
+                gridList.Add(g);
+            }
+            else
+            {
+                auxNode.SetColorAndID(pickedGridNode.color, id);
+            }
+            Repaint();
+        }
+        else if (id <= 0 && layer == Layers.Waypoint && selectedTool == Tools.Brush)
+        {
+            if (!isOcupied)
+            {
+                var g = new GridEnemy(x * gridSeparation, y * gridSeparation, gridSeparation, gridSeparation, pickedGridNode.color, pickedGridNode.id, x, y);
+                gridList.Add(g);
+            }
+            else
+            {
+                auxNode.SetColorAndID(pickedGridNode.color, 0);
+            }
+            Repaint();
+        }
     }
 
     private void PaintSquareScreen(int x, int y, List<GridNode> gridList)
@@ -751,6 +1283,19 @@ public class CustomRoomWindow : EditorWindow {
             }
             Repaint();
         }
+        else if (id <= 0 && layer== Layers.Waypoint && selectedTool == Tools.Brush)
+        {
+            if (!isOcupied)
+            {
+                var g = new GridNode(x * gridSeparation, y * gridSeparation, gridSeparation, gridSeparation, pickedGridNode.color, pickedGridNode.id, x, y);
+                gridList.Add(g);
+            }
+            else
+            {
+                auxNode.SetColorAndID(pickedGridNode.color, 0);
+            }
+            Repaint();
+        }
     }
 
     private void DrawDuplicateGroup(Event current)
@@ -774,6 +1319,16 @@ public class CustomRoomWindow : EditorWindow {
             {
                 SelectMovingGroup(obstacleNodes, duplicateObstacleGroup);
             }
+            if (enemiesLayer)
+            {
+                SelectMovingGroup(enemiesNodes, duplicateEnemiesGroup);
+            }
+            if (waypointLayer)
+            {
+                SelectMovingGroup(waypointNodes, duplicateWaypointGroup);
+                // TODO ver que no rompa todo
+  
+            }
             if (eventLayer) {
                 SelectMovingGroup(triggerNodes, duplicateTriggerGroup);
             }
@@ -788,6 +1343,17 @@ public class CustomRoomWindow : EditorWindow {
             MoveGroup(obstacleNodes,duplicateObstacleGroup, x, y, minX, minY);
         }
 
+        if (enemiesLayer)
+        {
+            // TODO hacer que se mueva
+            MoveGroup(enemiesNodes, duplicateEnemiesGroup, x, y, minX, minY);
+        }
+        if (waypointLayer)
+        {
+            // TODO hacer que se mueva
+            MoveGroup(waypointNodes,duplicateWaypointGroup, x, y, minX, minY);
+        }
+
         if (eventLayer)
         {
             MoveGroup(triggerNodes, duplicateTriggerGroup, x, y, minX, minY);
@@ -797,12 +1363,36 @@ public class CustomRoomWindow : EditorWindow {
         {
             duplicateFloorGroup = new List<GridNode>();
             duplicateObstacleGroup = new List<GridNode>();
+            duplicateEnemiesGroup = new List<GridEnemy>();
+            duplicateWaypointGroup = new List<GridNode>();
             duplicateTriggerGroup = new List<GridNode>();
             firstSelection = new Vector2Int();
             lastSelection = new Vector2Int();
         }
     }
-
+    private void MoveGroup(List<GridEnemy> nodes, List<GridEnemy> duplicateGroup, int x, int y, int minX, int minY)
+    {
+        foreach (var dob in duplicateGroup)
+        {
+            var gX = (dob.gridX + x - minX);
+            var gY = (dob.gridY + y - minY);
+            var ocupied = false;
+            foreach (var n in nodes)
+            {
+                if (n.gridX == gX && n.gridY == gY)
+                {
+                    n.SetColorAndID(dob.color, dob.id);
+                    break;
+                }
+            }
+            if (!ocupied)
+            {
+                var g = new GridEnemy(gX * gridSeparation, gY * gridSeparation, gridSeparation, gridSeparation, dob.color, dob.id, gX, gY);
+                nodes.Add(g);
+            }
+            Repaint();
+        }
+    }
     private void MoveGroup(List<GridNode> nodes, List<GridNode> duplicateGroup,int x, int y, int minX, int minY)
     {
         foreach (var dob in duplicateGroup)
@@ -828,6 +1418,20 @@ public class CustomRoomWindow : EditorWindow {
     }
 
     private void SelectMovingGroup(List<GridNode> nodes, List<GridNode> duplicateGroup)
+    {
+        for (int i = 0; i < duplicateGroup.Count; i++)
+        {
+            for (int j = nodes.Count - 1; j >= 0; j--)
+            {
+                if (nodes[j].gridX == duplicateGroup[i].gridX
+                && nodes[j].gridY == duplicateGroup[i].gridY)
+                {
+                    nodes.RemoveAt(j);
+                }
+            }
+        }
+    }
+    private void SelectMovingGroup(List<GridEnemy> nodes, List<GridEnemy> duplicateGroup)
     {
         for (int i = 0; i < duplicateGroup.Count; i++)
         {
@@ -893,21 +1497,38 @@ public class CustomRoomWindow : EditorWindow {
         {
             for(int i = 0 ; i< duplicateFloorGroup.Count; i++)
             {
-                DrawFloorSelectionPreview(duplicateFloorGroup[i].gridX + x - minX, duplicateFloorGroup[i].gridY + y - minY);
+                DrawObjectSelectionPreview(duplicateFloorGroup[i].gridX + x - minX, duplicateFloorGroup[i].gridY + y - minY, Color.blue);
             }
         }
         if(obstaclesLayer)
         {
             for(int i = 0 ; i< duplicateObstacleGroup.Count; i++)
             {
-                DrawObstacleSelectionPreview(duplicateObstacleGroup[i].gridX + x - minX, duplicateObstacleGroup[i].gridY + y - minY);
+                DrawObjectSelectionPreview(duplicateObstacleGroup[i].gridX + x - minX, duplicateObstacleGroup[i].gridY + y - minY, Color.red);
             }
         }
+
+        if (enemiesLayer)
+        {
+            for (int i = 0; i < duplicateEnemiesGroup.Count; i++)
+            {
+                DrawObjectSelectionPreview(duplicateEnemiesGroup[i].gridX + x - minX, duplicateEnemiesGroup[i].gridY + y - minY, Color.green);
+            }
+        }
+
+        if (waypointLayer)
+        {
+            for (int i = 0; i < duplicateWaypointGroup.Count; i++)
+            {
+                DrawObjectSelectionPreview(duplicateWaypointGroup[i].gridX + x - minX, duplicateWaypointGroup[i].gridY + y - minY, Color.yellow);
+            }
+        }
+
         if (eventLayer)
         {
             for (int i = 0; i < duplicateTriggerGroup.Count; i++)
             {
-                DrawObstacleSelectionPreview(duplicateTriggerGroup[i].gridX + x - minX, duplicateTriggerGroup[i].gridY + y - minY);
+                DrawObjectSelectionPreview(duplicateTriggerGroup[i].gridX + x - minX, duplicateTriggerGroup[i].gridY + y - minY, Color.magenta);
             }
         }
     }
@@ -916,6 +1537,8 @@ public class CustomRoomWindow : EditorWindow {
     {
         duplicateFloorGroup = new List<GridNode>();
         duplicateObstacleGroup = new List<GridNode>();
+        duplicateEnemiesGroup = new List<GridEnemy>();
+        duplicateWaypointGroup = new List<GridNode>();
         duplicateTriggerGroup = new List<GridNode>();
         var minX = (int)Mathf.Min(firstSelection.x, lastSelection.x);
         var minY = (int)Mathf.Min(firstSelection.y, lastSelection.y);
@@ -945,6 +1568,27 @@ public class CustomRoomWindow : EditorWindow {
                         }
                     }
                 }
+                
+                if (enemiesLayer)
+                {
+                    foreach (var on in enemiesNodes)
+                    {
+                        if (on.gridX == j && on.gridY == i)
+                        {
+                            duplicateEnemiesGroup.Add(on);
+                        }
+                    }
+                }
+                if (waypointLayer)
+                {
+                    foreach (var on in waypointNodes)
+                    {
+                        if (on.gridX == j && on.gridY == i)
+                        {
+                            duplicateWaypointGroup.Add(on);
+                        }
+                    }
+                }
                 if (eventLayer)
                 {
                     foreach (var tn in triggerNodes)
@@ -960,22 +1604,23 @@ public class CustomRoomWindow : EditorWindow {
         }
     }
 
-    void DrawFloorSelectionPreview(int x, int y)
+    void DrawObjectSelectionPreview(int x, int y, Color color)
     {
-        var c = Color.blue;
+        var c = color;
         
         c = new Color(c.r,c.g,c.b,c.a/2);
         EditorGUI.DrawRect(new Rect(x*gridSeparation,y*gridSeparation,gridSeparation,gridSeparation), c);
 
-        c = Color.blue;
+        c = color;
         EditorGUI.DrawRect(new Rect(x*gridSeparation,y*gridSeparation, gridSeparation,2), c);
         EditorGUI.DrawRect(new Rect(x*gridSeparation,y*gridSeparation, 2, gridSeparation),c);
         EditorGUI.DrawRect(new Rect(x*gridSeparation,y*gridSeparation + gridSeparation, gridSeparation,2), c);
         EditorGUI.DrawRect(new Rect(x*gridSeparation + gridSeparation, y*gridSeparation, 2, gridSeparation),c);
     }
 
-    void DrawObstacleSelectionPreview(int x, int y)
+   /* void DrawObstacleSelectionPreview(int x, int y)
     {
+        //TODO: hay que hacer una 
         var c = Color.red;
 
         c = new Color(c.r,c.g,c.b,c.a/2);
@@ -986,7 +1631,7 @@ public class CustomRoomWindow : EditorWindow {
         EditorGUI.DrawRect(new Rect(x*gridSeparation,y*gridSeparation, 2, gridSeparation),c);
         EditorGUI.DrawRect(new Rect(x*gridSeparation,y*gridSeparation + gridSeparation, gridSeparation,2), c);
         EditorGUI.DrawRect(new Rect(x*gridSeparation + gridSeparation, y*gridSeparation, 2, gridSeparation),c);
-    }
+    }*/
     
     void DrawGrid()
     {
@@ -1071,6 +1716,37 @@ public class CustomRoomWindow : EditorWindow {
             CreatePrefab(goParent, oN, obstacleModules);
         }
 
+        foreach (var eN in enemiesNodes)
+        {
+            GameObject enemy = CreatePrefab(goParent, eN, enemiesModules);
+            if (eN.path.Count<0) continue;
+            List<Vector3> posiciones = new List<Vector3>();
+            if (enemy.GetComponent<FollowPath>() == null) continue;
+            posiciones.Add(enemy.transform.position);
+            foreach (var pointName in eN.path)
+            {
+                var point=waypointNodes[pointName];
+                var pos = new Vector3(-point.gridX * moduleSize.x, 0, point.gridY * moduleSize.y);
+                posiciones.Add(pos);
+            }
+            enemy.GetComponent<FollowPath>().Set(posiciones);
+
+            //           if (eN.Value.Count == 0) continue;
+            //           GameObject enemy= CreatePrefab(goParent,eN.Value[0] , enemiesModules) ;
+            /*         List<Vector3> posiciones= new List<Vector3>();
+                     CreatePrefab(goParent, oN, obstacleModules);
+
+                     if (enemy.GetComponent<FollowPath>() == null) continue;
+                     foreach (var point in eN.Value)
+                     {
+                         var pos = new Vector3(-point.gridX * moduleSize.x, 0, point.gridY * moduleSize.y);
+                         posiciones.Add(pos);
+                     }
+                     enemy.GetComponent<FollowPath>().Set(posiciones);
+
+             */
+        }
+        
         foreach (var tr in triggerNodes)
         {
 
@@ -1078,7 +1754,7 @@ public class CustomRoomWindow : EditorWindow {
         }
     }
 
-    private void CreatePrefab(GameObject goParent, GridNode node, List<ModuleNode> list, float height=0)
+    private GameObject CreatePrefab(GameObject goParent, GridNode node, List<ModuleNode> list, float height=0)
     {
         var pos = new Vector3(-node.gridX * moduleSize.x, height, node.gridY * moduleSize.y);
         var pf = PrefabUtility.InstantiatePrefab(list[node.id].prefab);
@@ -1086,6 +1762,7 @@ public class CustomRoomWindow : EditorWindow {
         go.transform.position = pos;
         go.transform.rotation = Quaternion.identity;
         go.transform.SetParent(goParent.transform);
+        return go;
     }
 
     private void DrawLine(Color col, bool bold = false, bool vertical = false)
@@ -1100,7 +1777,8 @@ public class CustomRoomWindow : EditorWindow {
         Floor,
         Obstacles,
         Enemies,
-        EventTriggers
+        EventTriggers,
+        Waypoint
     }
 
     public enum Tools

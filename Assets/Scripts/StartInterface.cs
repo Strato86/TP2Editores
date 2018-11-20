@@ -64,14 +64,17 @@ public class StartInterface : EditorWindow
                 if (path.Length != 0)
                 {
                     var fileContent = File.ReadAllBytes(path);
+                    var p = path.Split('/');
+                    var room = (RoomData)AssetDatabase.LoadAssetAtPath("Assets/LevelDesign/SavedRoom/" + p[p.Length-1], typeof(RoomData));
+                    
                     //texture.LoadImage(fileContent);
-                    //CustomRoomWindow.OpenWindow(0, Vector2Int.zero, Vector2Int.zero);
+                    CustomRoomWindow.OpenWindow(0, Vector2Int.zero, Vector2Int.zero, room);
                 }
             }
 
             if (GUILayout.Button("Event Manager", GUILayout.Height(40), GUILayout.Width(200)))
             {
-                EventManagerWindow.OpenWindow();
+    //            EventManagerWindow.OpenWindow();
             }
 
             GUILayout.BeginArea(new Rect(0, 160, 200, 40));
