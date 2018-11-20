@@ -72,7 +72,7 @@ public class CustomRoomWindow : EditorWindow {
     List<GridNode> duplicateObstacleGroup;
     List<GridNode> duplicateTriggerGroup;
     List<GridNode> duplicateWaypointGroup;
-    List<GridNode> duplicateEnemiesGroup;
+    List<GridEnemy> duplicateEnemiesGroup;
     Vector2 firstSelection;
     Vector2 lastSelection;
 
@@ -122,7 +122,7 @@ public class CustomRoomWindow : EditorWindow {
         w.waypointNodes = new List<GridNode>();
         w.duplicateFloorGroup = new List<GridNode>();
         w.duplicateObstacleGroup = new List<GridNode>();
-        w.duplicateEnemiesGroup = new List<GridNode>();
+        w.duplicateEnemiesGroup = new List<GridEnemy>();
         w.duplicateTriggerGroup = new List<GridNode>();
         w.duplicateWaypointGroup = new List<GridNode>();
 
@@ -228,7 +228,6 @@ public class CustomRoomWindow : EditorWindow {
         
 
         GUI.BeginGroup(roomGraph);
-
         BeginWindows();
         //Board Nodes
         var otherLayersActivacted = obstaclesLayer || enemiesLayer || eventLayer;
@@ -291,21 +290,25 @@ public class CustomRoomWindow : EditorWindow {
         
         if (enemiesLayer)
         {
-            
-            foreach (var eN in enemiesNodes)
+            for (int i = 0; i < enemiesNodes.Count; i++)
             {
-
+                var eN = enemiesNodes[i];
                 eN.rect.width = gridSeparation;
                 eN.rect.height = gridSeparation;
                 eN.rect.x = eN.gridX * gridSeparation;
                 eN.rect.y = eN.gridY * gridSeparation;
-                eN.color = enemiesNodes[eN.id].color;
+                eN.color = enemiesModules[eN.id].color;
                 EditorGUI.DrawRect(eN.rect, eN.color);
                 var c = enemiesNodes[eN.id].color;
+                Debug.Log(c);
                // var c = Color.red;
-                c.a = 0.5f;
+                c.a = c.a/2;
                 var r = new Rect(eN.rect.x , eN.rect.y, gridSeparation, gridSeparation );
-                EditorGUI.DrawRect(r, c);
+                GUI.color = c;
+                GUI.Box(r, i.ToString());
+                GUI.color = defaultColor;
+            //    EditorGUI.DrawRect(r, c);
+          //      countEnemy++;
             }
         }
         /*
@@ -337,7 +340,7 @@ foreach (var eN in enemiesModules)
                 tN.rect.height = gridSeparation;
                 tN.rect.x = tN.gridX * gridSeparation;
                 tN.rect.y = tN.gridY * gridSeparation;
-                tN.color = triggerNodes[tN.id].color;
+                tN.color = triggerModules[tN.id].color;
                 EditorGUI.DrawRect(tN.rect, tN.color);
                 var c = defaultColor;
                 var r = new Rect(tN.rect.x + gridSeparation / 3, tN.rect.y + gridSeparation / 3, gridSeparation / 3, gridSeparation / 3);
@@ -465,28 +468,71 @@ foreach (var eN in enemiesModules)
                     break;
                 case Layers.Enemies:
                     if (pickedGridNode.id >= enemiesModules.Count) pickedGridNode.id = obstacleModules.Count - 1;
+
+                        List<string> aux = new List<string>();
+
+
+                        for (int i = 0; i < waypointNodes.Count; i++)
+                        {
+                            aux.Add(i.ToString());
+                        }
+
                     for (int i = 0; i < enemiesModules.Count; i++)
                     {
                         DrawPrefabModule(enemiesModules, i);
+                          var enemyindex = 0;
                         foreach (var enemy in enemiesNodes)
                         {
                             if (enemy.id== enemiesModules[i].id) {
-                                EditorGUILayout.LabelField("Enemigo");
-                                    foreach (var point in enemy.path)
-                                    {
-                                        EditorGUILayout.BeginHorizontal();
-
-                                        EditorGUILayout.LabelField("layer");
-                                        EditorGUILayout.LabelField(point.ToString());
-                                        EditorGUILayout.EndHorizontal();
-
-                                    }
+                                    var count = 0;
+                                EditorGUILayout.LabelField("Enemigo "+enemyindex.ToString());
+                                foreach (var point in enemy.path)
+                                {
                                     EditorGUILayout.BeginHorizontal();
 
-                                    EditorGUILayout.LabelField("Add layer");
+                                    EditorGUILayout.LabelField("Point "+ count + ": "  +point.ToString());
+
+                                    if (GUILayout.Button("Delete"))
+                                      {
+                                          enemy.path.RemoveAt(count);
+                                          Repaint();
+                                          break;
+                                      }
+                                    if (count < enemy.path.Count - 1 && GUILayout.Button("+"))
+                                    {
+                                        var pointaux = enemy.path[count];
+                                        enemy.path.RemoveAt(count);
+                                        enemy.path.Insert(count + 1, pointaux);
+                                        Repaint();
+                                        break;
+                                    }
+                                    if (count > 0 && GUILayout.Button("-"))
+                                    {
+                                        var pointaux = enemy.path[count];
+                                        enemy.path.RemoveAt(count);
+                                        enemy.path.Insert(count - 1, pointaux);
+                                        Repaint();
+                                        break;
+                                    }
+
+                                      EditorGUILayout.EndHorizontal();
+                                    count++;
+
+                                }
+                                EditorGUILayout.BeginHorizontal();
+                                EditorGUILayout.LabelField("New point");
+                                enemy.index = EditorGUILayout.Popup(enemy.index, aux.ToArray());
+                                if (GUILayout.Button("Add"))
+                                {
+                                    enemy.path.Add(enemy.index);
+                                    Repaint();
+                                    break;
+                                }
+                                   // EditorGUILayout.LabelField("Add layer");
                                   //  var index = EditorGUILayout.Popup(index, options);
                                     EditorGUILayout.EndHorizontal();
-                                }
+                             }
+                            enemyindex++;
                         }
                        // DrawPath(i);
 
@@ -500,12 +546,12 @@ foreach (var eN in enemiesModules)
                             EditorGUILayout.BeginHorizontal();
 
                             GUILayout.Label("Punto: " + x);
-                            if (GUILayout.Button("Delete"))
+                          /*  if (GUILayout.Button("Delete"))
                             {
                                 waypointNodes.RemoveAt(x);
                                 Repaint();
                                 break;
-                            }
+                            }*/
                             if (x < waypointNodes.Count - 1 && GUILayout.Button("+"))
                             {
                                 var point = waypointNodes[x];
@@ -701,7 +747,7 @@ foreach (var eN in enemiesModules)
                         foreach (var on in rd.enemiesNodes)
                         {
                             var n = new GridEnemy(on.gridX * gridSeparation, on.gridY * gridSeparation, gridSeparation, gridSeparation, on.color, on.id, on.gridX, on.gridY);
-                            obstacleNodes.Add(n);
+                            enemiesNodes.Add(n);
                         }
 
 
@@ -1091,13 +1137,13 @@ foreach (var eN in enemiesModules)
             }
             if (enemiesLayer)
             {
-                // TODO hacer que se mueva
-                //SelectMovingGroup(enemiesNodes, duplicateEnemiesGroup);
+                SelectMovingGroup(enemiesNodes, duplicateEnemiesGroup);
             }
             if (waypointLayer)
             {
-                // TODO hacer que se mueva
-                //SelectMovingGroup(waypointNodes, duplicateWaypointGroup);
+                SelectMovingGroup(waypointNodes, duplicateWaypointGroup);
+                // TODO ver que no rompa todo
+  
             }
             if (eventLayer) {
                 SelectMovingGroup(triggerNodes, duplicateTriggerGroup);
@@ -1116,12 +1162,12 @@ foreach (var eN in enemiesModules)
         if (enemiesLayer)
         {
             // TODO hacer que se mueva
-            //MoveGroup(enemiesNodes, duplicateEnemiesGroup, x, y, minX, minY);
+            MoveGroup(enemiesNodes, duplicateEnemiesGroup, x, y, minX, minY);
         }
         if (waypointLayer)
         {
             // TODO hacer que se mueva
-            //MoveGroup(waypoint, duplicateWaypointGroup, x, y, minX, minY);
+            MoveGroup(waypointNodes,duplicateWaypointGroup, x, y, minX, minY);
         }
 
         if (eventLayer)
@@ -1133,14 +1179,36 @@ foreach (var eN in enemiesModules)
         {
             duplicateFloorGroup = new List<GridNode>();
             duplicateObstacleGroup = new List<GridNode>();
-            duplicateEnemiesGroup = new List<GridNode>();
+            duplicateEnemiesGroup = new List<GridEnemy>();
             duplicateWaypointGroup = new List<GridNode>();
             duplicateTriggerGroup = new List<GridNode>();
             firstSelection = new Vector2Int();
             lastSelection = new Vector2Int();
         }
     }
-
+    private void MoveGroup(List<GridEnemy> nodes, List<GridEnemy> duplicateGroup, int x, int y, int minX, int minY)
+    {
+        foreach (var dob in duplicateGroup)
+        {
+            var gX = (dob.gridX + x - minX);
+            var gY = (dob.gridY + y - minY);
+            var ocupied = false;
+            foreach (var n in nodes)
+            {
+                if (n.gridX == gX && n.gridY == gY)
+                {
+                    n.SetColorAndID(dob.color, dob.id);
+                    break;
+                }
+            }
+            if (!ocupied)
+            {
+                var g = new GridEnemy(gX * gridSeparation, gY * gridSeparation, gridSeparation, gridSeparation, dob.color, dob.id, gX, gY);
+                nodes.Add(g);
+            }
+            Repaint();
+        }
+    }
     private void MoveGroup(List<GridNode> nodes, List<GridNode> duplicateGroup,int x, int y, int minX, int minY)
     {
         foreach (var dob in duplicateGroup)
@@ -1166,6 +1234,20 @@ foreach (var eN in enemiesModules)
     }
 
     private void SelectMovingGroup(List<GridNode> nodes, List<GridNode> duplicateGroup)
+    {
+        for (int i = 0; i < duplicateGroup.Count; i++)
+        {
+            for (int j = nodes.Count - 1; j >= 0; j--)
+            {
+                if (nodes[j].gridX == duplicateGroup[i].gridX
+                && nodes[j].gridY == duplicateGroup[i].gridY)
+                {
+                    nodes.RemoveAt(j);
+                }
+            }
+        }
+    }
+    private void SelectMovingGroup(List<GridEnemy> nodes, List<GridEnemy> duplicateGroup)
     {
         for (int i = 0; i < duplicateGroup.Count; i++)
         {
@@ -1271,6 +1353,8 @@ foreach (var eN in enemiesModules)
     {
         duplicateFloorGroup = new List<GridNode>();
         duplicateObstacleGroup = new List<GridNode>();
+        duplicateEnemiesGroup = new List<GridEnemy>();
+        duplicateWaypointGroup = new List<GridNode>();
         duplicateTriggerGroup = new List<GridNode>();
         var minX = (int)Mathf.Min(firstSelection.x, lastSelection.x);
         var minY = (int)Mathf.Min(firstSelection.y, lastSelection.y);
@@ -1300,8 +1384,8 @@ foreach (var eN in enemiesModules)
                         }
                     }
                 }
-                //TODO arreglar
-            /*    if (enemiesLayer)
+                
+                if (enemiesLayer)
                 {
                     foreach (var on in enemiesNodes)
                     {
@@ -1311,7 +1395,16 @@ foreach (var eN in enemiesModules)
                         }
                     }
                 }
-                */
+                if (waypointLayer)
+                {
+                    foreach (var on in waypointNodes)
+                    {
+                        if (on.gridX == j && on.gridY == i)
+                        {
+                            duplicateWaypointGroup.Add(on);
+                        }
+                    }
+                }
                 if (eventLayer)
                 {
                     foreach (var tn in triggerNodes)
@@ -1441,20 +1534,33 @@ foreach (var eN in enemiesModules)
 
         foreach (var eN in enemiesNodes)
         {
-            //           if (eN.Value.Count == 0) continue;
-            //           GameObject enemy= CreatePrefab(goParent,eN.Value[0] , enemiesModules) ;
-   /*         List<Vector3> posiciones= new List<Vector3>();
-            CreatePrefab(goParent, oN, obstacleModules);
-
+            GameObject enemy = CreatePrefab(goParent, eN, enemiesModules);
+            if (eN.path.Count<0) continue;
+            List<Vector3> posiciones = new List<Vector3>();
             if (enemy.GetComponent<FollowPath>() == null) continue;
-            foreach (var point in eN.Value)
+            posiciones.Add(enemy.transform.position);
+            foreach (var pointName in eN.path)
             {
+                var point=waypointNodes[pointName];
                 var pos = new Vector3(-point.gridX * moduleSize.x, 0, point.gridY * moduleSize.y);
                 posiciones.Add(pos);
             }
             enemy.GetComponent<FollowPath>().Set(posiciones);
-            
-    */
+
+            //           if (eN.Value.Count == 0) continue;
+            //           GameObject enemy= CreatePrefab(goParent,eN.Value[0] , enemiesModules) ;
+            /*         List<Vector3> posiciones= new List<Vector3>();
+                     CreatePrefab(goParent, oN, obstacleModules);
+
+                     if (enemy.GetComponent<FollowPath>() == null) continue;
+                     foreach (var point in eN.Value)
+                     {
+                         var pos = new Vector3(-point.gridX * moduleSize.x, 0, point.gridY * moduleSize.y);
+                         posiciones.Add(pos);
+                     }
+                     enemy.GetComponent<FollowPath>().Set(posiciones);
+
+             */
         }
         
         foreach (var tr in triggerNodes)
