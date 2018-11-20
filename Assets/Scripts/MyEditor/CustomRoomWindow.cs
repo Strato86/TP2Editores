@@ -95,6 +95,7 @@ public class CustomRoomWindow : EditorWindow {
 
     bool resetRoom;
     int resetRoomSpace = 250;
+    bool firstTime;
 
     public static void OpenWindow(int amount, Vector2Int moduleSize, Vector2Int boardSize)
     {
@@ -361,6 +362,7 @@ public class CustomRoomWindow : EditorWindow {
             w._roomsToLoad[i] = withoutExtension[0];
         }
         w.minSize = new Vector2(500,350);
+        w.firstTime = true;
     }
 
     private void OnGUI()
@@ -601,12 +603,20 @@ foreach (var eN in enemiesModules)
                     {
                         DrawPrefabModule(floorModules, i);
                     }
+                    if(firstTime)
+                    {
+                        layer = Layers.Obstacles;
+                    }
                     break;
                 case Layers.Obstacles:
                     if(pickedGridNode.id >= obstacleModules.Count) pickedGridNode.id = obstacleModules.Count - 1;
                     for(int i = 0; i< obstacleModules.Count; i++)
                     {
                         DrawPrefabModule(obstacleModules, i);
+                    }
+                    if(firstTime)
+                    {
+                        layer = Layers.Enemies;
                     }
                     break;
                 case Layers.Enemies:
@@ -680,6 +690,10 @@ foreach (var eN in enemiesModules)
                        // DrawPath(i);
 
                     }
+                    if(firstTime)
+                    {
+                        layer = Layers.Waypoint;
+                    }
                     break;
                 case Layers.Waypoint:
                     try
@@ -719,6 +733,10 @@ foreach (var eN in enemiesModules)
                     {
                         //Debug.Log(e.Message);
                     }
+                    if(firstTime)
+                    {
+                        layer = Layers.EventTriggers;
+                    }
                     break;
                 case Layers.EventTriggers:
                     if (pickedGridNode.id >=triggerModules.Count) pickedGridNode.id = triggerModules.Count - 1;
@@ -733,6 +751,11 @@ foreach (var eN in enemiesModules)
                             EditorGUILayout.HelpBox("Alguno de los objectos en Trigger prefab no tiene un trigger event",MessageType.Warning);
                             break;
                         }
+                    }
+                    if(firstTime)
+                    {
+                        layer = Layers.Floor;
+                        firstTime = false;
                     }
                     break;
                 }
