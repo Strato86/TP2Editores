@@ -93,6 +93,8 @@ public class CustomRoomWindow : EditorWindow {
     string saveName = "";
     string loadName = "";
 
+    bool resetRoom;
+    int resetRoomSpace = 250;
 
     public static void OpenWindow(int amount, Vector2Int moduleSize, Vector2Int boardSize)
     {
@@ -125,6 +127,150 @@ public class CustomRoomWindow : EditorWindow {
         w.duplicateEnemiesGroup = new List<GridEnemy>();
         w.duplicateTriggerGroup = new List<GridNode>();
         w.duplicateWaypointGroup = new List<GridNode>();
+
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign"))
+        {
+            AssetDatabase.CreateFolder("Assets", "LevelDesign");
+        }
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.floorFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.floorFolder);
+        }
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.obstaclesFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.obstaclesFolder);
+        }
+
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.enemiesFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.enemiesFolder);
+        }
+
+        if (!AssetDatabase.IsValidFolder("Assets/LevelDesign/" + w.dataFolder))
+        {
+            AssetDatabase.CreateFolder("Assets/LevelDesign", w.dataFolder);
+        }
+        string[] folders = new string[1];
+        folders[0] = "Assets/LevelDesign/" + w.floorFolder;
+        var paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+            w.floorModules.Add(pf);
+        }
+
+        folders[0] = "Assets/LevelDesign/" + w.obstaclesFolder;
+        Debug.Log("busco en la carpeta" + folders[0]);
+        paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+            Debug.Log("hay algo en la carpeta");
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+            w.obstacleModules.Add(pf);
+        }
+
+        folders[0] = "Assets/LevelDesign/" + w.enemiesFolder;
+        Debug.Log("busco en la carpeta" + folders[0]);
+        paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+            Debug.Log("hay algo en la carpeta");
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+         //   w.enemiesPath[pf] = new List<GridNode>();
+            w.enemiesModules.Add(pf);
+        }
+
+
+        folders[0] = "Assets/LevelDesign/" + w.triggerFolder;
+        Debug.Log("busco en la carpeta" + folders[0]);
+        paths = AssetDatabase.FindAssets("t: Object", folders);
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+            Debug.Log("hay algo en la carpeta");
+            var pf = new ModuleNode();
+            pf.prefab = (GameObject)AssetDatabase.LoadAssetAtPath(paths[i], typeof(Object));
+            w.triggerModules.Add(pf);
+        }
+
+        folders[0] = "Assets/LevelDesign/" + w.dataFolder;
+        paths = AssetDatabase.FindAssets("t: ScriptableObject", folders);
+        
+        w._roomsToLoad = new string[paths.Length];
+        for(int i = 0; i< paths.Length; i++)
+        {
+            paths[i] = AssetDatabase.GUIDToAssetPath(paths[i]);
+            var splitedPath = paths[i].Split('/');
+            paths[i] = splitedPath[splitedPath.Length - 1];
+            var withoutExtension = paths[i].Split('.');
+            w._roomsToLoad[i] = withoutExtension[0];
+        }
+        w.minSize = new Vector2(500,350);
+    }
+
+    public static void OpenWindow(int amount, Vector2Int moduleSize, Vector2Int boardSize, RoomData loadedRD)
+    {
+        var w = (CustomRoomWindow)GetWindow(typeof(CustomRoomWindow));
+        w.floorModules = new List<ModuleNode>();
+        w.obstacleModules = new List<ModuleNode>();
+        w.enemiesModules = new List<ModuleNode>();
+        w.waypointModules = new List<ModuleNode>();
+        w.triggerModules = new List<ModuleNode>();
+
+        w.graphPan = new Vector2(w.toolBarWidth + w.rulerBorder, w.smallBorder + w.rulerBorder);
+        w.initialGraphPan = w.graphPan;
+        w.roomGraph = new Rect(w.toolBarWidth + w.rulerBorder, w.smallBorder + w.rulerBorder, 1000000, 1000000);
+
+        if (boardSize == Vector2Int.zero)
+        {
+            boardSize = new Vector2Int(80, 50);
+        }
+        w.moduleSize = moduleSize;
+        w.boardSize = boardSize;
+        w.pickedGridNode = new GridNode();
+
+        w.floorNodes = new List<GridNode>();
+        w.obstacleNodes = new List<GridNode>();
+        w.enemiesNodes = new List<GridEnemy>();
+        w.triggerNodes = new List<GridNode>();
+        w.waypointNodes = new List<GridNode>();
+        w.duplicateFloorGroup = new List<GridNode>();
+        w.duplicateObstacleGroup = new List<GridNode>();
+        w.duplicateEnemiesGroup = new List<GridEnemy>();
+        w.duplicateTriggerGroup = new List<GridNode>();
+        w.duplicateWaypointGroup = new List<GridNode>();
+
+        foreach(var fn in loadedRD.floorNodes)
+        {
+            w.floorNodes.Add(fn);
+        }
+        foreach(var on in loadedRD.obstacleNodes)
+        {
+            w.obstacleNodes.Add(on);
+        }
+        foreach(var eN in loadedRD.enemiesNodes)
+        {
+            w.enemiesNodes.Add(eN);
+        }
+        foreach(var tN in loadedRD.triggerNodes)
+        {
+            w.triggerNodes.Add(tN);
+        }
+        foreach(var wN in loadedRD.waypointNodes)
+        {
+            w.waypointNodes.Add(wN);
+        }
 
         if (!AssetDatabase.IsValidFolder("Assets/LevelDesign"))
         {
@@ -255,7 +401,6 @@ public class CustomRoomWindow : EditorWindow {
         {
             foreach(var oN in obstacleNodes)
             {
-                
                 oN.rect.width = gridSeparation;
                 oN.rect.height = gridSeparation;
                 oN.rect.x = oN.gridX * gridSeparation;
@@ -269,7 +414,6 @@ public class CustomRoomWindow : EditorWindow {
         }
         if (waypointLayer)
         {
-
             for (int i = 0; i < waypointNodes.Count; i++)
             {
                 GridNode point = waypointNodes[i];
@@ -444,7 +588,7 @@ foreach (var eN in enemiesModules)
         layer = (Layers)EditorGUILayout.EnumPopup(layer,GUILayout.Width(100));
         EditorGUILayout.EndHorizontal();
 
-        scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250), GUILayout.Height(Mathf.Max(40,(position.height - bottomBarheight - 250))));
+        scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.Width(250), GUILayout.Height(Mathf.Max(40,(position.height - bottomBarheight - resetRoomSpace))));
         //Prefabs
         switch(selectedTool)
         {
@@ -463,7 +607,6 @@ foreach (var eN in enemiesModules)
                     for(int i = 0; i< obstacleModules.Count; i++)
                     {
                         DrawPrefabModule(obstacleModules, i);
-                        
                     }
                     break;
                 case Layers.Enemies:
@@ -683,6 +826,7 @@ foreach (var eN in enemiesModules)
                             var n = new GridNode(tn.gridX * gridSeparation, tn.gridY * gridSeparation ,gridSeparation,gridSeparation, tn.color, tn.id, tn.gridX, tn.gridY);
                             rd.triggerNodes.Add(n);
                         }
+
                         rd.roomName = groupName;
                         RoomDataUtility.SaveRoom(saveName, rd);
 
@@ -711,7 +855,7 @@ foreach (var eN in enemiesModules)
 
                 DrawLine(Color.grey);
 
-                myS.fontSize = 18;
+                /*myS.fontSize = 18;
                 myS.fontStyle = FontStyle.Bold;
                 EditorGUILayout.LabelField("Load Room", myS);
 
@@ -784,21 +928,38 @@ foreach (var eN in enemiesModules)
                     
                     EditorGUILayout.LabelField(_roomsToLoad[i], myS);
                 }
-                EditorGUILayout.EndScrollView();
+                EditorGUILayout.EndScrollView();*/
                 break;
         }
         
-        EditorGUILayout.EndScrollView();
-
-        if (GUILayout.Button("Reset Room"))
+        EditorGUILayout.EndScrollView();     
+        if (resetRoom)
+        { 
+            DrawLine(Color.gray, false, false);
+            EditorGUILayout.LabelField("Are you sure?", EditorStyles.boldLabel);
+            resetRoomSpace = 320;
+            if(GUILayout.Button("Yes"))
+            {
+                floorNodes = new List<GridNode>();
+                obstacleNodes = new List<GridNode>();
+                enemiesNodes = new List<GridEnemy>();
+                // enemiesPath = new Dictionary<ModuleNode, List<GridNode>>();
+                triggerNodes = new List<GridNode>();
+                waypointNodes = new List<GridNode>();
+                groupName = "";
+                resetRoom = false;
+                resetRoomSpace = 250;
+            }
+            if(GUILayout.Button("No"))
+            {
+                resetRoom = false;
+                resetRoomSpace = 250;
+            }
+            DrawLine(Color.gray, false, false);
+            Repaint();
+        }else
         {
-            floorNodes = new List<GridNode>();
-            obstacleNodes = new List<GridNode>();
-            enemiesNodes = new List<GridEnemy>();
-           // enemiesPath = new Dictionary<ModuleNode, List<GridNode>>();
-            triggerNodes = new List<GridNode>();
-            waypointNodes = new List<GridNode>();
-            groupName = "";
+            resetRoom = GUILayout.Button("Reset Room");
         }
         if (GUILayout.Button("Create Room"))
         {
